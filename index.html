@@ -2718,6 +2718,14 @@
             }
 
             function submitResultOnline() {
+                try {
+                    submitResultOnlineInner();
+                } catch (e) {
+                    toast('提交出错：' + (e && e.message ? e.message : e) + '（请改用“下载结果文件”发给老师）');
+                }
+            }
+
+            function submitResultOnlineInner() {
                 const payload = buildResultPayload();
                 if (!payload) return;
                 const endpoint = getSubmitEndpoint();
@@ -2806,6 +2814,14 @@
             }
 
             function pullOnlineResults() {
+                try {
+                    pullOnlineResultsInner();
+                } catch (e) {
+                    toast('拉取出错：' + (e && e.message ? e.message : e) + '（可把学生发来的结果粘贴到上方输入框导入）');
+                }
+            }
+
+            function pullOnlineResultsInner() {
                 const endpoint = getSubmitEndpoint();
                 if (!endpoint) { toast('请先填写并保存收集网址'); return; }
                 const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
@@ -3437,6 +3453,22 @@
 
             $('roleStudentBtn').addEventListener('click', function() { setRole('student'); });
             $('roleTeacherBtn').addEventListener('click', function() { setRole('teacher'); });
+
+            // ---- 暴露按钮函数（修复点击无反应）----
+            window.saveIdentity = saveIdentity;
+            window.stickySubmit = stickySubmit;
+            window.submitResultOnline = submitResultOnline;
+            window.exportMyResult = exportMyResult;
+            window.copyMyResult = copyMyResult;
+            window.saveEndpoint = saveEndpoint;
+            window.testEndpoint = testEndpoint;
+            window.pullOnlineResults = pullOnlineResults;
+            window.importPastedResults = importPastedResults;
+            window.unlockTeacher = unlockTeacher;
+            window.clearAllResults = clearAllResults;
+            window.exportAllJson = exportAllJson;
+            window.exportStudentsCsv = exportStudentsCsv;
+            window.exportQuestionsCsv = exportQuestionsCsv;
 
             // ---- 初始化 ----
             loadIdentity();
