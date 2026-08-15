@@ -1224,6 +1224,27 @@
         .toast.show {
             opacity: 1;
         }
+        .sticky-submit {
+            position: fixed;
+            right: 20px;
+            bottom: 24px;
+            z-index: 200;
+            display: none;
+            align-items: center;
+            gap: var(--sp-2);
+            padding: var(--sp-3) var(--sp-5);
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: #fff;
+            font-size: var(--fs-base);
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .sticky-submit.show { display: flex; }
+        .sticky-submit:hover { background: linear-gradient(135deg, #0284c7, #0369a1); }
         .btn-danger {
             background: var(--color-danger);
             color: #fff;
@@ -1671,6 +1692,8 @@
             </p>
         </footer>
     </div>
+
+    <button id="stickySubmitBtn" class="sticky-submit" type="button" onclick="stickySubmit()">🚀 一键提交结果给老师</button>
 
     <!-- 模态框（仅展示概念） -->
     <div class="modal-overlay" id="modalOverlay">
@@ -2731,6 +2754,7 @@
                             box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
                         }
                         toast('在线提交成功 ✅');
+                        refreshStickyButton();
                     } else {
                         fail('服务器返回 ' + r.status);
                     }
@@ -2748,6 +2772,7 @@
                             box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
                         }
                         toast('在线提交成功 ✅');
+                        refreshStickyButton();
                     } else {
                         fail('网络错误，请检查网络后重试');
                     }
@@ -2809,6 +2834,7 @@
 
             function refreshSubmitCard() {
                 const card = $('submitResultCard');
+                refreshStickyButton();
                 if (!card) return;
                 const comp = window._compScores;
                 if (!comp) { card.classList.add('hidden'); return; }
@@ -2824,12 +2850,56 @@
                 const orig = window[fn];
                 if (typeof orig === 'function') {
                     window[fn] = function() {
+                        if (fn === 'submitComprehensive' && !currentIdentity()) {
+                            toast('请先在上方填写并保存姓名、学号（提交结果必需）');
+                            const sec = document.getElementById('identity');
+                            if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                            return;
+                        }
                         const ret = orig.apply(this, arguments);
                         refreshSubmitCard();
+                        if (fn === 'submitComprehensive') {
+                            const sc = $('submitResultCard');
+                            if (sc && !sc.classList.contains('hidden')) {
+                                setTimeout(function() { sc.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400);
+                            }
+                        }
                         return ret;
                     };
                 }
             });
+
+            function refreshStickyButton() {
+                const btn = $('stickySubmitBtn');
+                if (!btn) return;
+                const comp = window._compScores;
+                const identity = currentIdentity();
+                const done = getOnlineSubmittedMap();
+                const already = identity && done[identity.studentId];
+                if (comp && identity && !already) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            }
+
+            function stickySubmit() {
+                const comp = window._compScores;
+                if (!comp) {
+                    toast('请先完成综合测评并点击“提交综合测评”');
+                    const sec = document.getElementById('comprehensive');
+                    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
+                const identity = currentIdentity();
+                if (!identity) {
+                    toast('请先在上方填写并保存姓名、学号');
+                    const sec = document.getElementById('identity');
+                    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
+                submitResultOnline();
+            }
 
             // ============================================================
             //  教师端：数据存取
