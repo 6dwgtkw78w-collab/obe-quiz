@@ -1,0 +1,3326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBE 金字塔知识智能体 · 随机答案</title>
+    <style>
+        /* ===== 全局样式（与之前保持一致，略作精简） ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --color-canvas: #f5f7f9;
+            --color-surface: #ffffff;
+            --color-surface-alt: #f0f4f7;
+            --color-ink: #1a2332;
+            --color-ink-soft: #4a5568;
+            --color-ink-muted: #718096;
+            --color-border: #e2e8f0;
+            --color-border-soft: #edf2f7;
+            --color-accent: #0ea5e9;
+            --color-accent-ink: #ffffff;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --fs-xs: 0.75rem;
+            --fs-sm: 0.875rem;
+            --fs-base: 1rem;
+            --fs-lg: 1.125rem;
+            --fs-xl: 1.25rem;
+            --fs-2xl: 1.5rem;
+            --fs-3xl: 1.875rem;
+            --fs-4xl: 2.25rem;
+            --sp-1: 0.25rem;
+            --sp-2: 0.5rem;
+            --sp-3: 0.75rem;
+            --sp-4: 1rem;
+            --sp-5: 1.25rem;
+            --sp-6: 1.5rem;
+            --sp-8: 2rem;
+            --sp-10: 2.5rem;
+            --sp-12: 3rem;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --content-max: 1200px;
+            --reading-max: 720px;
+        }
+        body {
+            font-family: var(--font-sans);
+            font-size: var(--fs-base);
+            color: var(--color-ink);
+            background: var(--color-canvas);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1,
+        h2,
+        h3,
+        h4 {
+            margin: 0;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+        a {
+            color: var(--color-accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .page-wrap {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--sp-8) clamp(1rem, 3vw, 2rem);
+        }
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(245, 247, 249, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--color-border-soft);
+        }
+        .top-nav-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--sp-3) clamp(1rem, 3vw, 2rem);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--sp-4);
+            flex-wrap: wrap;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+            font-weight: 700;
+            font-size: var(--fs-lg);
+            color: var(--color-ink);
+        }
+        .nav-brand-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-accent), #06b6d4);
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: var(--fs-sm);
+            font-weight: 800;
+        }
+        .nav-links {
+            display: flex;
+            gap: var(--sp-2);
+            flex-wrap: wrap;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .nav-links a {
+            display: inline-block;
+            padding: var(--sp-2) var(--sp-3);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+            border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-links a:hover {
+            background: var(--color-surface);
+            color: var(--color-ink);
+            text-decoration: none;
+        }
+        .hero {
+            padding: var(--sp-12) 0 var(--sp-10);
+            text-align: left;
+        }
+        .hero-tag {
+            display: inline-block;
+            padding: var(--sp-1) var(--sp-3);
+            background: #e0f2fe;
+            color: #075985;
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            border-radius: 999px;
+            margin-bottom: var(--sp-4);
+        }
+        .hero h1 {
+            font-size: clamp(1.75rem, 4vw, var(--fs-4xl));
+            line-height: 1.15;
+            margin-bottom: var(--sp-4);
+            max-width: 720px;
+        }
+        .hero-desc {
+            font-size: var(--fs-lg);
+            color: var(--color-ink-soft);
+            line-height: 1.75;
+            max-width: 640px;
+            margin-bottom: var(--sp-6);
+        }
+        .hero-meta {
+            display: flex;
+            gap: var(--sp-6);
+            flex-wrap: wrap;
+            padding-top: var(--sp-5);
+            border-top: 1px solid var(--color-border);
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-1);
+        }
+        .meta-label {
+            font-size: var(--fs-xs);
+            color: var(--color-ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .meta-value {
+            font-size: var(--fs-lg);
+            font-weight: 700;
+            color: var(--color-ink);
+        }
+
+        .section {
+            padding: var(--sp-12) 0;
+            border-top: 1px solid var(--color-border-soft);
+        }
+        .section-header {
+            margin-bottom: var(--sp-8);
+        }
+        .section-eyebrow {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--sp-2);
+        }
+        .section h2 {
+            font-size: clamp(1.375rem, 3vw, var(--fs-2xl));
+            margin-bottom: var(--sp-3);
+        }
+        .section-desc {
+            color: var(--color-ink-soft);
+            max-width: var(--reading-max);
+            line-height: 1.75;
+        }
+
+        .pyramid-section {
+            background: linear-gradient(180deg, var(--color-canvas) 0%, var(--color-surface) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-10) var(--sp-8);
+            margin-bottom: var(--sp-10);
+            position: relative;
+            overflow: hidden;
+        }
+        .pyramid-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pyramid-container {
+            max-width: 720px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .pyramid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: var(--sp-8);
+        }
+        .pyramid-layer {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            border-radius: 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            padding: 0 var(--sp-3);
+        }
+        .pyramid-layer:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            z-index: 2;
+        }
+        .pyramid-layer[data-level="5"] {
+            width: 120px;
+            height: 56px;
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .pyramid-layer[data-level="4"] {
+            width: 240px;
+            height: 56px;
+            background: #dcfce7;
+            color: #166534;
+        }
+        .pyramid-layer[data-level="3"] {
+            width: 360px;
+            height: 56px;
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .pyramid-layer[data-level="2"] {
+            width: 480px;
+            height: 56px;
+            background: #cffafe;
+            color: #155e75;
+        }
+        .pyramid-layer[data-level="1"] {
+            width: 600px;
+            height: 56px;
+            background: #e0f2fe;
+            color: #075985;
+        }
+        .pyramid-layer-label {
+            font-weight: 700;
+            font-size: var(--fs-sm);
+            text-align: center;
+            padding: 0 var(--sp-2);
+        }
+        .pyramid-layer-label .layer-num {
+            font-size: var(--fs-xs);
+            opacity: 0.7;
+            display: block;
+            margin-bottom: 2px;
+        }
+        @media (max-width: 680px) {
+            .pyramid-layer[data-level="5"] {
+                width: 70px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="4"] {
+                width: 140px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="3"] {
+                width: 210px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="2"] {
+                width: 280px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="1"] {
+                width: 350px;
+                height: 44px;
+            }
+            .pyramid-layer-label {
+                font-size: var(--fs-xs);
+                padding: 0 var(--sp-1);
+            }
+        }
+
+        #kg-container {
+            width: 100%;
+            height: 620px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-4);
+            position: relative;
+        }
+        @media (max-width: 640px) {
+            #kg-container {
+                height: 460px;
+            }
+        }
+
+        /* 模态框（仅展示概念） */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            max-width: 680px;
+            width: 94%;
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 28px 32px;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFade 0.3s ease;
+        }
+        @keyframes modalFade {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #f0f2f5;
+            border: none;
+            font-size: 28px;
+            line-height: 1;
+            padding: 0 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #555;
+            transition: 0.2s;
+            margin-top: -8px;
+            margin-right: -8px;
+            z-index: 10;
+        }
+        .modal-close:hover {
+            background: #e0e4e8;
+            color: #000;
+        }
+        .modal-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e2a3a;
+            margin: 4px 0 16px 0;
+            border-bottom: 2px solid #e8ecf1;
+            padding-bottom: 12px;
+        }
+        .modal-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #f8faff;
+            padding: 18px 22px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 8px;
+        }
+        .modal-level-tag {
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .modal-level-tag.l5 {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .modal-level-tag.l4 {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .modal-level-tag.l3 {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .modal-level-tag.l2 {
+            background: #cffafe;
+            color: #155e75;
+        }
+        .modal-level-tag.l1 {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        /* 测评样式 */
+        .quiz-section {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-6);
+            margin-bottom: var(--sp-6);
+        }
+        .quiz-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--sp-5);
+            padding-bottom: var(--sp-4);
+            border-bottom: 1px solid var(--color-border-soft);
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+        }
+        .quiz-level-info {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .quiz-level-name {
+            font-size: var(--fs-xl);
+            font-weight: 700;
+        }
+        .quiz-level-sub {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+            margin-top: 2px;
+        }
+        .quiz-progress {
+            text-align: right;
+        }
+        .quiz-score {
+            font-size: var(--fs-2xl);
+            font-weight: 800;
+            color: var(--color-accent);
+        }
+        .quiz-score-label {
+            font-size: var(--fs-xs);
+            color: var(--color-ink-muted);
+        }
+        .quiz-item {
+            padding: var(--sp-4) 0;
+            border-bottom: 1px solid var(--color-border-soft);
+        }
+        .quiz-item:last-child {
+            border-bottom: none;
+        }
+        .quiz-question {
+            font-weight: 600;
+            margin-bottom: var(--sp-3);
+            display: flex;
+            gap: var(--sp-3);
+        }
+        .quiz-qnum {
+            color: var(--color-accent);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .quiz-options {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 var(--sp-3);
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+        }
+        .quiz-option {
+            padding: var(--sp-3) var(--sp-4);
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: var(--fs-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .quiz-option:hover {
+            border-color: var(--color-accent);
+            background: #e0f2fe;
+        }
+        .quiz-option.selected {
+            border-color: var(--color-accent);
+            background: #e0f2fe;
+            font-weight: 600;
+        }
+        .quiz-option.correct {
+            border-color: var(--color-success);
+            background: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .quiz-option.incorrect {
+            border-color: var(--color-danger);
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .quiz-option-letter {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            display: grid;
+            place-items: center;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .quiz-feedback {
+            display: none;
+            padding: var(--sp-3) var(--sp-4);
+            border-radius: 6px;
+            font-size: var(--fs-sm);
+            line-height: 1.75;
+        }
+        .quiz-feedback.show {
+            display: block;
+        }
+        .quiz-feedback.correct {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 3px solid var(--color-success);
+        }
+        .quiz-feedback.incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 3px solid var(--color-danger);
+        }
+        .quiz-actions {
+            display: flex;
+            gap: var(--sp-3);
+            margin-top: var(--sp-4);
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: var(--sp-2) var(--sp-5);
+            border-radius: 6px;
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--color-accent);
+            color: var(--color-accent-ink);
+        }
+        .btn-primary:hover {
+            background: #0284c7;
+        }
+        .btn-secondary {
+            background: var(--color-surface);
+            color: var(--color-ink-soft);
+            border-color: var(--color-border);
+        }
+        .btn-secondary:hover {
+            background: var(--color-surface-alt);
+            color: var(--color-ink);
+        }
+
+        .comprehensive-quiz {
+            background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-8);
+            border: 1px solid #bae6fd;
+        }
+        .comprehensive-header {
+            text-align: center;
+            margin-bottom: var(--sp-6);
+        }
+        .comprehensive-header h3 {
+            font-size: var(--fs-xl);
+            margin-bottom: var(--sp-2);
+        }
+        .comprehensive-header p {
+            color: var(--color-ink-soft);
+            font-size: var(--fs-sm);
+        }
+
+        /* 可视化 */
+        .viz-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-6);
+        }
+        @media (max-width: 860px) {
+            .viz-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        .viz-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-6);
+        }
+        .viz-card-header {
+            margin-bottom: var(--sp-5);
+        }
+        .viz-card-header h3 {
+            font-size: var(--fs-lg);
+            margin-bottom: var(--sp-1);
+        }
+        .viz-card-header p {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .viz-card-full {
+            grid-column: 1 / -1;
+        }
+
+        .radar-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--sp-2) 0;
+            width: 100%;
+        }
+        #radarCanvas {
+            max-width: 100%;
+            height: auto;
+            background: transparent;
+        }
+
+        .mastery-bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+        .mastery-bar-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 50px;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .mastery-bar-label {
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            color: var(--color-ink-soft);
+        }
+        .mastery-bar-track {
+            height: 20px;
+            background: var(--color-surface-alt);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        .mastery-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1s ease;
+            position: relative;
+        }
+        .mastery-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+        }
+        .mastery-bar-value {
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .fill-5 {
+            background: #854d0e;
+        }
+        .fill-4 {
+            background: #166534;
+        }
+        .fill-3 {
+            background: #115e59;
+        }
+        .fill-2 {
+            background: #155e75;
+        }
+        .fill-1 {
+            background: #075985;
+        }
+
+        .heat-high {
+            background: #bbf7d0;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .heat-med {
+            background: #fef9c3;
+            color: #854d0e;
+            font-weight: 600;
+        }
+        .heat-low {
+            background: #fecaca;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .heat-none {
+            background: #f3f4f6;
+            color: #9ca3af;
+        }
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+        }
+        .heatmap-table th,
+        .heatmap-table td {
+            padding: var(--sp-3);
+            text-align: center;
+            border: 1px solid var(--color-border-soft);
+        }
+        .heatmap-table th {
+            background: var(--color-surface-alt);
+            font-weight: 700;
+            font-size: var(--fs-xs);
+            color: var(--color-ink-soft);
+        }
+        .heatmap-table th:first-child {
+            text-align: left;
+            width: 120px;
+        }
+        .heatmap-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            background: var(--color-surface-alt);
+        }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--sp-4);
+            margin-top: var(--sp-5);
+        }
+        .insight-card {
+            padding: var(--sp-4);
+            border-radius: 6px;
+            border-left: 3px solid;
+            background: var(--color-surface-alt);
+        }
+        .insight-card.strength {
+            border-color: var(--color-success);
+        }
+        .insight-card.gap {
+            border-color: var(--color-warning);
+        }
+        .insight-card.action {
+            border-color: var(--color-accent);
+        }
+        .insight-title {
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            margin-bottom: var(--sp-2);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+        .insight-desc {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+            line-height: 1.75;
+        }
+
+        .footer {
+            padding: var(--sp-8) 0 var(--sp-6);
+            border-top: 1px solid var(--color-border-soft);
+            text-align: center;
+            color: var(--color-ink-muted);
+            font-size: var(--fs-sm);
+        }
+        .footer a {
+            color: var(--color-accent);
+        }
+
+        @media (max-width: 640px) {
+            .quiz-section {
+                padding: var(--sp-4);
+            }
+            .comprehensive-quiz {
+                padding: var(--sp-5);
+            }
+            .viz-card {
+                padding: var(--sp-4);
+            }
+            .mastery-bar-row {
+                grid-template-columns: 60px 1fr 40px;
+                gap: var(--sp-2);
+            }
+            .mastery-bar-label {
+                font-size: var(--fs-xs);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        .kg-level-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .kg-level-badge.l5 {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .kg-level-badge.l4 {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .kg-level-badge.l3 {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .kg-level-badge.l2 {
+            background: #cffafe;
+            color: #155e75;
+        }
+        .kg-level-badge.l1 {
+            background: #e0f2fe;
+            color: #075985;
+        }
+    </style>
+
+    <!-- ===== 学生端/教师端新增样式 ===== -->
+    <style>
+        .role-switch {
+            display: flex;
+            gap: var(--sp-2);
+            margin-left: auto;
+        }
+        .role-btn {
+            padding: var(--sp-2) var(--sp-4);
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            background: var(--color-surface);
+            color: var(--color-ink-soft);
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .role-btn:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+        .role-btn.active {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: var(--color-accent-ink);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .identity-card,
+        .submit-card,
+        .teacher-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--sp-6);
+        }
+        .identity-card h3,
+        .submit-card h3,
+        .teacher-card h3 {
+            margin-bottom: var(--sp-2);
+        }
+        .identity-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-4);
+            align-items: flex-end;
+            margin-top: var(--sp-4);
+        }
+        .identity-fields label {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-1);
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            color: var(--color-ink-soft);
+        }
+        .identity-fields input {
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: var(--fs-base);
+            min-width: 200px;
+        }
+        .identity-fields input:focus {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+        .identity-note {
+            margin-top: var(--sp-3);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .submit-card {
+            border: 1px dashed var(--color-accent);
+            margin-top: var(--sp-6);
+            text-align: center;
+        }
+        .submit-card .who {
+            color: var(--color-accent);
+            font-weight: 800;
+        }
+        .submit-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            justify-content: center;
+            margin-top: var(--sp-4);
+        }
+        .teacher-section {
+            margin-top: var(--sp-8);
+        }
+        .teacher-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            align-items: center;
+            margin-bottom: var(--sp-4);
+        }
+        .teacher-toolbar .btn {
+            font-size: var(--fs-sm);
+            padding: var(--sp-2) var(--sp-4);
+        }
+        .online-submit-note {
+            margin-top: var(--sp-3);
+            padding: var(--sp-3) var(--sp-4);
+            border-radius: var(--radius-md);
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+        }
+        .online-submit-note.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .online-submit-note.success {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        .online-submit-note .btn {
+            margin-top: var(--sp-2);
+        }
+        .endpoint-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-2);
+            align-items: center;
+            margin-top: var(--sp-2);
+        }
+        .endpoint-row input {
+            flex: 1;
+            min-width: 260px;
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: var(--fs-sm);
+        }
+        .import-paste {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+            margin-top: var(--sp-4);
+        }
+        .import-paste textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: var(--fs-sm);
+            resize: vertical;
+        }
+        .t-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--sp-4);
+            margin-bottom: var(--sp-6);
+        }
+        .t-stat-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--sp-5);
+            text-align: center;
+        }
+        .t-stat-card .num {
+            font-size: var(--fs-3xl);
+            font-weight: 800;
+            color: var(--color-accent);
+            line-height: 1.1;
+        }
+        .t-stat-card .label {
+            margin-top: var(--sp-1);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .t-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: var(--sp-5);
+            margin-bottom: var(--sp-5);
+        }
+        .t-bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-3);
+            margin-top: var(--sp-4);
+        }
+        .t-bar-row {
+            display: grid;
+            grid-template-columns: 130px 1fr 52px;
+            align-items: center;
+            gap: var(--sp-3);
+            font-size: var(--fs-sm);
+        }
+        .t-bar-label {
+            color: var(--color-ink-soft);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .t-bar-track {
+            background: var(--color-surface-alt);
+            border-radius: 999px;
+            height: 18px;
+            overflow: hidden;
+        }
+        .t-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+            width: 0;
+            transition: width 0.6s ease;
+        }
+        .t-bar-fill.low {
+            background: linear-gradient(90deg, #fca5a5, #ef4444);
+        }
+        .t-bar-fill.mid {
+            background: linear-gradient(90deg, #fcd34d, #f59e0b);
+        }
+        .t-bar-val {
+            font-weight: 800;
+            text-align: right;
+            color: var(--color-ink);
+        }
+        .t-table-wrap {
+            overflow-x: auto;
+            margin-top: var(--sp-4);
+        }
+        .t-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+            min-width: 720px;
+        }
+        .t-table th,
+        .t-table td {
+            padding: var(--sp-2) var(--sp-3);
+            border-bottom: 1px solid var(--color-border-soft);
+            text-align: left;
+            white-space: nowrap;
+        }
+        .t-table th {
+            background: var(--color-surface-alt);
+            font-weight: 700;
+            color: var(--color-ink-soft);
+            position: sticky;
+            top: 0;
+        }
+        .t-table tr:hover td {
+            background: #f8fafc;
+        }
+        .badge-good {
+            color: #059669;
+            font-weight: 700;
+        }
+        .badge-warn {
+            color: #d97706;
+            font-weight: 700;
+        }
+        .badge-bad {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .t-help {
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+            margin-bottom: var(--sp-5);
+            font-size: var(--fs-sm);
+            line-height: 1.7;
+        }
+        .t-help ol {
+            padding-left: 1.4rem;
+            margin-top: var(--sp-2);
+        }
+        .t-help li {
+            margin-bottom: var(--sp-1);
+        }
+        .t-empty {
+            padding: var(--sp-8);
+            text-align: center;
+            color: var(--color-ink-muted);
+            background: var(--color-surface);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-lg);
+        }
+        .password-gate {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            align-items: center;
+            margin-top: var(--sp-4);
+        }
+        .password-gate input {
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: var(--fs-base);
+            min-width: 220px;
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            transform: translateX(-50%);
+            background: #1a2332;
+            color: #fff;
+            padding: var(--sp-3) var(--sp-5);
+            border-radius: 999px;
+            font-size: var(--fs-sm);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .btn-danger {
+            background: var(--color-danger);
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航 -->
+    <nav class="top-nav" role="navigation" aria-label="页面导航">
+        <div class="top-nav-inner">
+            <div class="nav-brand">
+                <span class="nav-brand-badge">OBE</span>
+                <span>金字塔知识智能体</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#pyramid">金字塔模型</a></li>
+                <li><a href="#knowledge-graph">知识图谱</a></li>
+                <li><a href="#level-quiz">层级测评</a></li>
+                <li><a href="#comprehensive">综合测评</a></li>
+                <li><a href="#visualization">可视化分析</a></li>
+            </ul>
+            <div class="role-switch">
+                <button class="role-btn active" id="roleStudentBtn" type="button">👩‍🎓 学生端</button>
+                <button class="role-btn" id="roleTeacherBtn" type="button">👨‍🏫 教师端</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <main>
+
+            <!-- Hero -->
+            <header class="hero">
+                <span class="hero-tag">Outcome-Based Education · 成果导向教育</span>
+                <h1>OBE 金字塔知识智能体</h1>
+                <p class="hero-desc">
+                    基于 Spady (1994) 的 OBE 金字塔模型，融合 <strong>知识图谱</strong>（ECharts 交互可视化）、<strong>分层测评</strong> 与 <strong>五维雷达分析</strong>。
+                    每道题的正确选项位置<strong>随机分布</strong>，刷新页面即可重新打乱。
+                </p>
+                <div class="hero-meta">
+                    <div class="meta-item"><span class="meta-label">知识层级</span><span class="meta-value">5 层</span></div>
+                    <div class="meta-item"><span class="meta-label">核心节点</span><span class="meta-value">15 个</span></div>
+                    <div class="meta-item"><span class="meta-label">分层测评题</span><span class="meta-value">15 道</span></div>
+                    <div class="meta-item"><span class="meta-label">综合测评</span><span class="meta-value">10 道</span></div>
+                </div>
+            </header>
+
+            <!-- 学生身份信息 -->
+            <section class="section" id="identity" style="padding-top:0;">
+                <div class="identity-card">
+                    <h3>📝 填写你的信息（提交结果前必填）</h3>
+                    <p class="identity-note">请填写<strong>姓名</strong>和<strong>学号</strong>，信息只保存在你自己的浏览器中，用于提交结果时标识身份。</p>
+                    <div class="identity-fields">
+                        <label>姓名
+                            <input type="text" id="studentName" placeholder="例如：张三" autocomplete="name">
+                        </label>
+                        <label>学号
+                            <input type="text" id="studentId" placeholder="例如：20260001" autocomplete="off">
+                        </label>
+                        <button class="btn btn-primary" type="button" onclick="saveIdentity()">保存信息</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 金字塔模型 -->
+            <section class="section" id="pyramid">
+                <div class="section-header">
+                    <div class="section-eyebrow">01 · Pyramid Model</div>
+                    <h2>OBE 金字塔层级模型</h2>
+                    <p class="section-desc">
+                        基于 Spady (1994) 的经典框架，金字塔从底层到顶层依次为：<strong>5 个实施要点 → 4 个操作原则 → 3 个关键前提 → 2 个关键目的 → 1 个操作范式</strong>。
+                        每一层都支撑上一层，所有层级共同指向成果导向的教育目标。
+                    </p>
+                </div>
+                <div class="pyramid-section">
+                    <div class="pyramid-container">
+                        <div class="pyramid" role="img" aria-label="OBE金字塔5个层级">
+                            <div class="pyramid-layer" data-level="5">
+                                <div class="pyramid-layer-label"><span class="layer-num">L5 · 顶层</span>1 个操作范式</div>
+                            </div>
+                            <div class="pyramid-layer" data-level="4">
+                                <div class="pyramid-layer-label"><span class="layer-num">L4</span>2 个关键目的</div>
+                            </div>
+                            <div class="pyramid-layer" data-level="3">
+                                <div class="pyramid-layer-label"><span class="layer-num">L3</span>3 个关键前提</div>
+                            </div>
+                            <div class="pyramid-layer" data-level="2">
+                                <div class="pyramid-layer-label"><span class="layer-num">L2</span>4 个操作原则</div>
+                            </div>
+                            <div class="pyramid-layer" data-level="1">
+                                <div class="pyramid-layer-label"><span class="layer-num">L1 · 基础层</span>5 个实施要点</div>
+                            </div>
+                        </div>
+                        <div style="text-align:center;font-size:var(--fs-sm);color:var(--color-ink-muted);padding-top:var(--sp-2);">
+                            ← 点击下方「知识图谱」中的节点，可查看概念解析 →
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 知识图谱 -->
+            <section class="section" id="knowledge-graph">
+                <div class="section-header">
+                    <div class="section-eyebrow">02 · Knowledge Graph</div>
+                    <h2>OBE 知识图谱 · 交互可视化</h2>
+                    <p class="section-desc">
+                        点击任意节点查看概念详解。图谱按 5 个层级组织，从操作范式到实施要点，完整呈现 OBE 理论体系。
+                    </p>
+                </div>
+                <div id="kg-container"></div>
+            </section>
+
+            <!-- 层级测评 -->
+            <section class="section" id="level-quiz">
+                <div class="section-header">
+                    <div class="section-eyebrow">03 · Level Assessment</div>
+                    <h2>层级达标测评</h2>
+                    <p class="section-desc">
+                        每个层级 3 道题，检验你是否真正掌握该层级的核心概念。答题后即时反馈答案与解析。
+                    </p>
+                </div>
+
+                <!-- L5 -->
+                <div class="quiz-section" data-level="5">
+                    <div class="quiz-section-header">
+                        <div class="quiz-level-info">
+                            <span class="kg-level-badge l5">L5</span>
+                            <div>
+                                <div class="quiz-level-name">操作范式 · Paradigm</div>
+                                <div class="quiz-level-sub">3 道题</div>
+                            </div>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-score" id="score-l5">—/3</div><div class="quiz-score-label">得分</div></div>
+                    </div>
+                    <div class="quiz-list" id="quiz-l5"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" onclick="submitLevel(5)">提交本层答案</button>
+                        <button class="btn btn-secondary" onclick="resetLevel(5)">重置</button>
+                    </div>
+                </div>
+
+                <!-- L4 -->
+                <div class="quiz-section" data-level="4">
+                    <div class="quiz-section-header">
+                        <div class="quiz-level-info">
+                            <span class="kg-level-badge l4">L4</span>
+                            <div>
+                                <div class="quiz-level-name">关键目的 · Purposes</div>
+                                <div class="quiz-level-sub">3 道题</div>
+                            </div>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-score" id="score-l4">—/3</div><div class="quiz-score-label">得分</div></div>
+                    </div>
+                    <div class="quiz-list" id="quiz-l4"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" onclick="submitLevel(4)">提交本层答案</button>
+                        <button class="btn btn-secondary" onclick="resetLevel(4)">重置</button>
+                    </div>
+                </div>
+
+                <!-- L3 -->
+                <div class="quiz-section" data-level="3">
+                    <div class="quiz-section-header">
+                        <div class="quiz-level-info">
+                            <span class="kg-level-badge l3">L3</span>
+                            <div>
+                                <div class="quiz-level-name">关键前提 · Premises</div>
+                                <div class="quiz-level-sub">3 道题</div>
+                            </div>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-score" id="score-l3">—/3</div><div class="quiz-score-label">得分</div></div>
+                    </div>
+                    <div class="quiz-list" id="quiz-l3"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" onclick="submitLevel(3)">提交本层答案</button>
+                        <button class="btn btn-secondary" onclick="resetLevel(3)">重置</button>
+                    </div>
+                </div>
+
+                <!-- L2 -->
+                <div class="quiz-section" data-level="2">
+                    <div class="quiz-section-header">
+                        <div class="quiz-level-info">
+                            <span class="kg-level-badge l2">L2</span>
+                            <div>
+                                <div class="quiz-level-name">操作原则 · Principles</div>
+                                <div class="quiz-level-sub">3 道题</div>
+                            </div>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-score" id="score-l2">—/3</div><div class="quiz-score-label">得分</div></div>
+                    </div>
+                    <div class="quiz-list" id="quiz-l2"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" onclick="submitLevel(2)">提交本层答案</button>
+                        <button class="btn btn-secondary" onclick="resetLevel(2)">重置</button>
+                    </div>
+                </div>
+
+                <!-- L1 -->
+                <div class="quiz-section" data-level="1">
+                    <div class="quiz-section-header">
+                        <div class="quiz-level-info">
+                            <span class="kg-level-badge l1">L1</span>
+                            <div>
+                                <div class="quiz-level-name">实施要点 · Practices</div>
+                                <div class="quiz-level-sub">3 道题</div>
+                            </div>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-score" id="score-l1">—/3</div><div class="quiz-score-label">得分</div></div>
+                    </div>
+                    <div class="quiz-list" id="quiz-l1"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" onclick="submitLevel(1)">提交本层答案</button>
+                        <button class="btn btn-secondary" onclick="resetLevel(1)">重置</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 综合测评 -->
+            <section class="section" id="comprehensive">
+                <div class="section-header">
+                    <div class="section-eyebrow">04 · Comprehensive Assessment</div>
+                    <h2>整体 OBE 综合测评</h2>
+                    <p class="section-desc">跨 5 个层级的综合测试，共 10 道题，全面检验对 OBE 金字塔体系的融会贯通能力。</p>
+                </div>
+                <div class="comprehensive-quiz">
+                    <div class="comprehensive-header">
+                        <h3>🎯 OBE 综合能力测评</h3>
+                        <p>覆盖全部 5 个层级 · 10 道题 · 答完自动评分并生成可视化分析报告</p>
+                        <div style="margin-top:var(--sp-3);font-size:var(--fs-sm);color:var(--color-accent);font-weight:700;">
+                            当前得分：<span id="comp-score">—</span> / 10
+                        </div>
+                    </div>
+                    <div id="comp-quiz-container"></div>
+                    <div class="quiz-actions" style="justify-content:center;margin-top:var(--sp-6);">
+                        <button class="btn btn-primary" style="padding:var(--sp-3) var(--sp-8);font-size:var(--fs-base);" onclick="submitComprehensive()">提交综合测评 · 生成分析报告</button>
+                        <button class="btn btn-secondary" onclick="resetComprehensive()">重置所有答案</button>
+                    </div>
+                    <div class="submit-card hidden" id="submitResultCard">
+                        <h3>📤 提交你的做题结果</h3>
+                        <p style="color:var(--color-ink-muted);margin-top:var(--sp-2);">
+                            当前身份：<span class="who" id="submitWho">未填写</span> ｜ 综合测评得分：<span class="who" id="submitScore">—</span> / 10
+                        </p>
+                        <p style="color:var(--color-ink-muted);margin-top:var(--sp-2);font-size:var(--fs-sm);">
+                            点击下方按钮生成你的结果文件或结果文本，然后通过微信 / 学习通 / 邮件发给老师即可。
+                        </p>
+                        <div class="submit-actions">
+                            <button class="btn btn-primary" type="button" onclick="exportMyResult()">⬇️ 下载我的结果文件（.json）</button>
+                            <button class="btn btn-secondary" type="button" onclick="copyMyResult()">📋 复制我的结果文本</button>
+                        </div>
+                        <div class="online-submit-note hidden" id="onlineSubmitBox">
+                            <p style="font-weight:700;">🌐 在线提交</p>
+                            <p style="margin-top:var(--sp-1);">本页面已接入在线收集，点击下方按钮即可把结果直接提交给老师，无需下载文件。</p>
+                            <button class="btn btn-primary" type="button" onclick="submitResultOnline()">🚀 在线提交我的结果</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 可视化分析 -->
+            <section class="section" id="visualization">
+                <div class="section-header">
+                    <div class="section-eyebrow">05 · Visual Analytics</div>
+                    <h2>掌握程度可视化分析</h2>
+                    <p class="section-desc">从雷达图、条形图、热力矩阵、能力画像四个维度，全面呈现你的 OBE 知识掌握情况。</p>
+                </div>
+                <div class="viz-section">
+                    <!-- 雷达图 -->
+                    <div class="viz-card">
+                        <div class="viz-card-header"><h3>五维能力雷达图</h3><p>各层级掌握度整体分布</p></div>
+                        <div class="radar-container">
+                            <canvas id="radarCanvas" width="340" height="320"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 条形图 -->
+                    <div class="viz-card">
+                        <div class="viz-card-header"><h3>各层掌握度条形图</h3><p>每层级得分与掌握程度</p></div>
+                        <div class="mastery-bars" id="mastery-bars">
+                            <div class="mastery-bar-row"><span class="mastery-bar-label">L5 操作范式</span><div class="mastery-bar-track"><div class="mastery-bar-fill fill-5" style="width:0%;" data-level="5"></div></div><span class="mastery-bar-value" id="bar-val-5">0%</span></div>
+                            <div class="mastery-bar-row"><span class="mastery-bar-label">L4 关键目的</span><div class="mastery-bar-track"><div class="mastery-bar-fill fill-4" style="width:0%;" data-level="4"></div></div><span class="mastery-bar-value" id="bar-val-4">0%</span></div>
+                            <div class="mastery-bar-row"><span class="mastery-bar-label">L3 关键前提</span><div class="mastery-bar-track"><div class="mastery-bar-fill fill-3" style="width:0%;" data-level="3"></div></div><span class="mastery-bar-value" id="bar-val-3">0%</span></div>
+                            <div class="mastery-bar-row"><span class="mastery-bar-label">L2 操作原则</span><div class="mastery-bar-track"><div class="mastery-bar-fill fill-2" style="width:0%;" data-level="2"></div></div><span class="mastery-bar-value" id="bar-val-2">0%</span></div>
+                            <div class="mastery-bar-row"><span class="mastery-bar-label">L1 实施要点</span><div class="mastery-bar-track"><div class="mastery-bar-fill fill-1" style="width:0%;" data-level="1"></div></div><span class="mastery-bar-value" id="bar-val-1">0%</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 热力矩阵 -->
+                    <div class="viz-card viz-card-full">
+                        <div class="viz-card-header"><h3>知识维度热力矩阵</h3><p>横向：能力维度 · 纵向：层级 · 颜色越深掌握越好</p></div>
+                        <div style="overflow-x:auto;">
+                            <table class="heatmap-table" id="heatmap-table">
+                                <thead><tr><th>层级 / 维度</th><th>概念理解</th><th>关系辨析</th><th>实践应用</th><th>综合分析</th><th>层级总评</th></tr></thead>
+                                <tbody id="heatmap-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 洞察 -->
+                    <div class="viz-card viz-card-full">
+                        <div class="viz-card-header"><h3>学习诊断与提升建议</h3><p>基于测评结果的智能分析</p></div>
+                        <div class="insight-grid" id="insight-grid">
+                            <div class="insight-card strength"><div class="insight-title">💪 优势领域</div><div class="insight-desc">完成测评后，系统将分析你的优势层级与能力维度。</div></div>
+                            <div class="insight-card gap"><div class="insight-title">⚠️ 待提升项</div><div class="insight-desc">识别薄弱环节，精准定位知识盲区。</div></div>
+                            <div class="insight-card action"><div class="insight-title">🚀 学习路径</div><div class="insight-desc">基于 OBE 自底向上的规律，推荐个性化进阶路径。</div></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ===== 教师端统计面板 ===== -->
+        <section class="section teacher-section hidden" id="teacherSection">
+            <div class="section-header">
+                <div class="section-eyebrow">06 · Class Analytics</div>
+                <h2>👨‍🏫 全班做题统计与可视化</h2>
+                <p class="section-desc">导入学生提交的结果，自动生成全班分数分布、各层掌握度、每题正确率等统计图表，并可导出 Excel 数据。</p>
+            </div>
+
+            <div class="teacher-card" id="teacherGate">
+                <h3>🔒 教师端入口</h3>
+                <p style="color:var(--color-ink-muted);margin-top:var(--sp-2);font-size:var(--fs-sm);">
+                    请输入教师密码（默认密码：<strong>123456</strong>，可在页面代码开头的 <code>TEACHER_PASSWORD</code> 处修改）。
+                </p>
+                <div class="password-gate">
+                    <input type="password" id="teacherPwd" placeholder="请输入教师密码" onkeydown="if(event.key==='Enter')unlockTeacher()">
+                    <button class="btn btn-primary" type="button" onclick="unlockTeacher()">进入教师端</button>
+                </div>
+            </div>
+
+            <div id="teacherPanel" class="hidden">
+                <div class="t-help">
+                    <strong>📖 使用说明（三步收集全班结果）</strong>
+                    <ol>
+                        <li><strong>发布：</strong>把网页链接发给学生（微信 / 学习通 / QQ 均可），学生用浏览器打开即可做题。</li>
+                        <li><strong>在线回收（推荐）：</strong>在下方“在线收集设置”里填入你的收集网址并保存，学生提交综合测评后点击“在线提交我的结果”，结果直接发到你这里；老师在本页点“🔄 拉取在线结果”即可合并进统计。</li>
+                        <li><strong>文件回收（备选）：</strong>学生也可以点“下载我的结果文件”或“复制我的结果文本”发回给你，然后点击“导入学生结果文件”（可一次多选），或把文本粘贴到下方输入框后点“导入”。</li>
+                        <li><strong>统计：</strong>导入或拉取后，下方自动生成全班统计图；数据保存在本浏览器中，刷新不丢失，可随时用“💾 备份全部数据”保存。</li>
+                    </ol>
+                </div>
+
+                <div class="teacher-toolbar">
+                    <label class="btn btn-primary" style="cursor:pointer;">
+                        📂 导入学生结果文件（可多选）
+                        <input type="file" id="resultFiles" accept=".json,application/json" multiple style="display:none;" onchange="importResultFiles(event)">
+                    </label>
+                    <button class="btn btn-secondary" type="button" onclick="exportAllJson()">💾 备份全部数据</button>
+                    <button class="btn btn-secondary" type="button" onclick="exportStudentsCsv()">📊 导出学生明细 CSV</button>
+                    <button class="btn btn-secondary" type="button" onclick="exportQuestionsCsv()">📈 导出每题正确率 CSV</button>
+                    <button class="btn btn-danger" type="button" onclick="clearAllResults()">🗑️ 清空全部数据</button>
+                </div>
+
+                <div class="import-paste">
+                    <label style="font-size:var(--fs-sm);font-weight:700;color:var(--color-ink-soft);">📋 粘贴学生发来的结果文本（可一次粘贴多份，每份单独一行）</label>
+                    <textarea id="pasteResults" placeholder="在这里粘贴学生复制的结果文本…"></textarea>
+                    <div>
+                        <button class="btn btn-primary" type="button" onclick="importPastedResults()">导入粘贴的结果</button>
+                    </div>
+                </div>
+
+                <div class="teacher-card" style="margin-top:var(--sp-5);">
+                    <h3>🌐 在线收集设置</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">
+                        学生端会显示“在线提交”按钮，把结果直接发到这里填写的网址（无需收文件）。
+                        老师页面也会定期从该网址自动拉取新结果并合并进下方统计。
+                    </p>
+                    <div class="endpoint-row">
+                        <input type="text" id="submitEndpoint" placeholder="https://webhook.site/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
+                        <button class="btn btn-primary" type="button" onclick="saveEndpoint()">保存</button>
+                        <button class="btn btn-secondary" type="button" onclick="pullOnlineResults()">🔄 拉取在线结果</button>
+                        <button class="btn btn-secondary" type="button" onclick="testEndpoint()">测试</button>
+                    </div>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);margin-top:var(--sp-2);">
+                        提示：打开 <a href="https://webhook.site" target="_blank" rel="noopener">webhook.site</a> 会免费生成一个专属网址，把那个网址粘贴到上面即可（免注册，收集数据约保留 7 天）。
+                    </p>
+                </div>
+
+                <div id="tStats" class="t-stat-grid" style="margin-top:var(--sp-5);"></div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>📊 综合测评分数分布</h3>
+                        <div class="t-bars" id="scoreDist"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>🏔️ 各层级平均掌握度</h3>
+                        <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">基于学生已完成的测评数据</p>
+                        <div class="t-bars" id="levelAvg"></div>
+                    </div>
+                </div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>🎯 综合测评每题正确率</h3>
+                        <div class="t-bars" id="compAcc"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>🧩 分层测评每题正确率</h3>
+                        <div class="t-bars" id="levelAcc"></div>
+                    </div>
+                </div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>🔄 能力维度平均正确率</h3>
+                        <div class="t-bars" id="dimAvg"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>⚠️ 薄弱题目 Top 5</h3>
+                        <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">错误率最高的题目，建议在课堂重点讲解</p>
+                        <div class="t-bars" id="weakQuestions"></div>
+                    </div>
+                </div>
+
+                <div class="teacher-card" style="margin-bottom:var(--sp-5);">
+                    <h3>🔥 层级 × 维度 正确率热力图</h3>
+                    <div class="t-table-wrap">
+                        <table class="t-table" id="classHeatTable"></table>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <h3>👥 学生成绩明细表</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">按综合测评总分从高到低排列；表格可横向滚动查看更多列</p>
+                    <div class="t-table-wrap">
+                        <table class="t-table" id="studentTable"></table>
+                    </div>
+                </div>
+
+                <div class="t-empty hidden" id="tEmpty">暂无学生结果。请先导入学生提交的结果文件或文本。</div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>OBE 金字塔知识智能体 · 基于 Spady (1994) 成果导向教育模型构建</p>
+            <p style="margin-top:var(--sp-2);font-size:var(--fs-xs);">
+                参考资料：<a href="https://scispace.com/pdf/outcome-based-education-pyramid-a-comprehensive-framework-2fbzwqwz.pdf" target="_blank" rel="noopener">OBE Pyramid Framework</a> ·
+                <a href="http://www.xnxyyjy.cn/index.php?ac=Article&at=Read&did=122" target="_blank" rel="noopener">悉尼协议研究院 OBE 导读</a> ·
+                <a href="https://files.eric.ed.gov/fulltext/ED380910.pdf" target="_blank" rel="noopener">Spady W.G. Outcome-Based Education</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- 模态框（仅展示概念） -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box" id="modalBox">
+            <button class="modal-close" id="modalCloseBtn">&times;</button>
+            <div id="modalLevelTag" class="modal-level-tag">L5</div>
+            <div class="modal-title" id="modalTitle">节点名称</div>
+            <div class="modal-description" id="modalDescription">节点解释</div>
+        </div>
+    </div>
+
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js">
+    </script>
+
+    <script>
+        // ============================================================
+        //  1. 节点数据（仅描述）
+        // ============================================================
+        const nodeDataMap = {
+            "操作范式": { level: 5,
+                description: "OBE 的操作范式代表一种观察教育的新方式：所有学生都能成功，学校应为成功创造条件。范式是一种观点和与之相符的做事方式。Spady (1994) 指出，范式转变是从「教」到「学」的根本转变。" },
+            "关键目的1：学生成功": { level: 4,
+                description: "关键目的①：确保所有学生在离开教育体系后都具备成功所需要的知识、能力和素养。这是 OBE 的终极指向。" },
+            "关键目的2：学校建设": { level: 4,
+                description: "关键目的②：构建和运营学校，使所有学生都能实现这些结果并最大化。学校要为学生成功创造系统性条件。" },
+            "前提1：所有学生能学习": { level: 3,
+                description: "前提①：所有的学生都可以学习和成功，但不是在一天以同样的方式学习。学习是多元的、异步的。" },
+            "前提2：成功促进成功": { level: 3,
+                description: "前提②：成功的学习甚至能促进更为成功的学习。成功体验具有累积和激励效应。" },
+            "前提3：学校控制条件": { level: 3,
+                description: "前提③：学校控制着直接影响学生学习成功的条件。学校有责任创造支持性环境。" },
+            "原则1：清楚聚焦": { level: 2,
+                description: "清楚聚焦：教育目标必须清晰明确，所有教学活动围绕明确的学习成果展开。目标要具体、可衡量。" },
+            "原则2：扩大机会": { level: 2,
+                description: "扩大机会：为所有学生提供多样化的成功途径，确保不同背景、能力的学生都能获得支持和资源。" },
+            "原则3：提高期待": { level: 2,
+                description: "提高期待：对全体学生保持高期望，相信他们能达到高水平，并通过挑战性任务激发潜能。" },
+            "原则4：反向设计": { level: 2,
+                description: "反向设计：从社会需求和培养目标出发，反向设计毕业要求、课程体系、教学和评价，确保目标与结果一致。" },
+            "要点1：确定学习成果": { level: 1,
+                description: "Define Outcomes：明确表述可观察、可测量的学习成果，转换成绩效指标，充分考虑利益相关者期望。" },
+            "要点2：构建课程体系": { level: 1,
+                description: "Design Curriculum：建立能力结构与课程体系的清晰映射关系，确保每种能力都有明确课程支撑。" },
+            "要点3：确定教学策略": { level: 1,
+                description: "Deliver Instruction：强调学生学到什么，采用研究型、个性化教学，而非灌输式教学。" },
+            "要点4：自我参考评价": { level: 1,
+                description: "Document Results：聚焦学习成果，采用多元梯次评价标准，强调个人进步而非横向比较。" },
+            "要点5：逐级达到顶峰": { level: 1,
+                description: "Determine Advancement：将学习进程划分阶段，每阶段有明确目标，从初级到高级逐步达成顶峰成果。不同学生可用不同时间和方式。" }
+        };
+
+        const levelNodes = { 5: [], 4: [], 3: [], 2: [], 1: [] };
+        for (const [name, data] of Object.entries(nodeDataMap)) {
+            const lv = data.level;
+            if (levelNodes[lv]) levelNodes[lv].push({ id: name, ...data });
+        }
+        for (const lv of [5, 4, 3, 2, 1]) levelNodes[lv].sort((a, b) => a.id.localeCompare(b.id));
+
+        // ============================================================
+        //  2. ECharts 知识图谱
+        // ============================================================
+        const kgChart = (typeof echarts !== 'undefined') ? echarts.init(document.getElementById('kg-container')) : null;
+        const layers = [
+            { level: 5, label: 'L5 操作范式', y: 30, size: 56, color: '#fef9c3' },
+            { level: 4, label: 'L4 关键目的', y: 130, size: 48, color: '#dcfce7' },
+            { level: 3, label: 'L3 关键前提', y: 230, size: 42, color: '#ccfbf1' },
+            { level: 2, label: 'L2 操作原则', y: 330, size: 38, color: '#cffafe' },
+            { level: 1, label: 'L1 实施要点', y: 440, size: 34, color: '#e0f2fe' }
+        ];
+        const graphNodes = [],
+            graphLinks = [];
+        const colorMap = { 5: '#854d0e', 4: '#166534', 3: '#115e59', 2: '#155e75', 1: '#075985' };
+        layers.forEach((layer, li) => {
+            const nodes = levelNodes[layer.level] || [];
+            const count = nodes.length;
+            const spacing = Math.min(120, 780 / (count + 1));
+            const totalW = (count - 1) * spacing;
+            const startX = -totalW / 2;
+            nodes.forEach((node, ni) => {
+                const x = startX + ni * spacing;
+                const id = node.id;
+                graphNodes.push({
+                    id: id,
+                    name: id.length > 10 ? id.substring(0, 10) + '…' : id,
+                    fullName: id,
+                    x: x,
+                    y: layer.y,
+                    symbolSize: layer.size,
+                    category: li,
+                    itemStyle: { color: layer.color, borderColor: colorMap[layer.level], borderWidth: 2 },
+                    label: { fontSize: li === 0 ? 15 : 11, fontWeight: li === 0 ? 'bold' : 'normal',
+                        color: '#1a2332' },
+                    level: layer.level,
+                    nodeData: node
+                });
+                if (li > 0) {
+                    const prevNodes = graphNodes.filter(n => n.level === layers[li - 1].level);
+                    if (prevNodes.length > 0) {
+                        const target = prevNodes.reduce((a, b) => {
+                            const da = Math.abs(a.x - x),
+                                db = Math.abs(b.x - x);
+                            return da < db ? a : b;
+                        });
+                        graphLinks.push({ source: target.id, target: id, lineStyle: { color: '#b0c4de',
+                                width: 1.5, opacity: 0.4 } });
+                    }
+                }
+            });
+        });
+        const l5Nodes = graphNodes.filter(n => n.level === 5);
+        const l4Nodes = graphNodes.filter(n => n.level === 4);
+        l5Nodes.forEach(s => { l4Nodes.forEach(t => { graphLinks.push({ source: s.id, target: t.id,
+                    lineStyle: { color: '#b0c4de', width: 1.5, opacity: 0.3 } }); }); });
+
+        if (kgChart) kgChart.setOption({
+            tooltip: { trigger: 'item', formatter: p => p.dataType === 'node' ? `<strong>${p.name}</strong><br/>层级：L${p.data.level}` :
+                    '' },
+            series: [{
+                type: 'graph',
+                layout: 'none',
+                data: graphNodes,
+                links: graphLinks,
+                categories: layers.map(l => ({ name: l.label })),
+                label: { show: true, position: 'bottom', formatter: p => p.data.fullName || p.name,
+                    fontSize: 11, color: '#1a2332', fontWeight: 500, offset: [0, 6] },
+                lineStyle: { color: '#b0c4de', width: 1.5, opacity: 0.35 },
+                emphasis: { focus: 'adjacency', lineStyle: { width: 3, color: '#2c3e50' },
+                    itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.2)' } },
+                itemStyle: { borderColor: '#fff', borderWidth: 2, shadowBlur: 6,
+                shadowColor: 'rgba(0,0,0,0.08)' },
+                roam: true,
+                draggable: true
+            }]
+        });
+
+        if (kgChart) kgChart.on('click', function(params) {
+            if (params.dataType === 'node' && params.data && params.data.fullName) {
+                const name = params.data.fullName;
+                if (nodeDataMap[name]) showNodeModal(name);
+                else alert('该节点暂无详细数据');
+            }
+        });
+        window.addEventListener('resize', () => kgChart && kgChart.resize());
+
+        // ============================================================
+        //  3. 模态框
+        // ============================================================
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDescription = document.getElementById('modalDescription');
+        const modalLevelTag = document.getElementById('modalLevelTag');
+
+        function showNodeModal(nodeId) {
+            const data = nodeDataMap[nodeId];
+            if (!data) return;
+            modalTitle.textContent = nodeId;
+            modalDescription.textContent = data.description;
+            const lv = data.level;
+            modalLevelTag.className = 'modal-level-tag l' + lv;
+            modalLevelTag.textContent = 'L' + lv + ' · ' +
+                ['操作范式', '关键目的', '关键前提', '操作原则', '实施要点'][5 - lv];
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+        // ============================================================
+        //  4. 工具：洗牌函数 & 题目数据（使用 correctText 而非固定索引）
+        // ============================================================
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 将题目数据中的 correct 存储为正确答案的文本，然后洗牌选项并返回新的选项数组和正确索引
+        function shuffleQuestion(q) {
+            const opts = q.options.slice();
+            const correctText = q.correctText;
+            const shuffled = shuffleArray(opts);
+            const newIndex = shuffled.indexOf(correctText);
+            return { shuffledOptions: shuffled, correctIndex: newIndex };
+        }
+
+        // ---- 层级测评数据（使用 correctText） ----
+        const levelQuizRaw = {
+            5: [
+                { q: 'OBE 范式强调的核心是什么？', options: ['所有学生都能成功', '只有优秀学生能成功', '考试决定一切', '教师权威至上'],
+                correctText: '所有学生都能成功' },
+                { q: '范式在 OBE 中指的是什么？', options: ['观察方式和做事方式', '一种教学方法', '一种评价工具', '一种课程内容'],
+                    correctText: '观察方式和做事方式' },
+                { q: 'OBE 范式转变的根本方向是什么？', options: ['从教到学', '从学到教', '从内容到过程', '从评价到教学'],
+                correctText: '从教到学' }
+            ],
+            4: [
+                { q: '关键目的①「学生成功」的核心是确保学生具备什么？', options: ['知识、能力和素养', '高分数', '学历证书', '社交关系'],
+                    correctText: '知识、能力和素养' },
+                { q: '关键目的②「学校建设」要求学校做什么？', options: ['让所有学生实现结果', '提高学校排名', '增加招生人数', '减少教学成本'],
+                    correctText: '让所有学生实现结果' },
+                { q: '两个关键目的之间的关系是什么？', options: ['目的①是目的②的前提', '目的②是目的①的实现条件', '两者是并列关系', '两者互不相关'],
+                    correctText: '目的②是目的①的实现条件' }
+            ],
+            3: [
+                { q: '前提①「所有学生能学习」说明学习方式具有什么特点？', options: ['多样性', '单一性', '固定性', '不可变性'],
+                correctText: '多样性' },
+                { q: '前提②「成功促进成功」支持哪种教学策略？', options: ['逐步进阶', '一蹴而就', '填鸭式', '应试教育'],
+                correctText: '逐步进阶' },
+                { q: '前提③「学校控制条件」意味着什么？', options: ['学校可主动创造成功环境', '学校无法影响学生', '学校只负责管理', '学校只需提供教材'],
+                    correctText: '学校可主动创造成功环境' }
+            ],
+            2: [
+                { q: '原则①「清楚聚焦」的目的是什么？', options: ['明确学习方向', '增加学习负担', '减少教学', '增加考试'],
+                correctText: '明确学习方向' },
+                { q: '原则②「扩大机会」的目的是什么？', options: ['促进所有学生成功', '筛选学生', '淘汰学生', '排名'],
+                correctText: '促进所有学生成功' },
+                { q: '原则④「反向设计」的起点是什么？', options: ['社会需求', '教学内容', '教师偏好', '教材'], correctText: '社会需求' }
+            ],
+            1: [
+                { q: '要点①「确定学习成果」应考虑谁的期望？', options: ['利益相关者', '教师', '学校', '教材'], correctText: '利益相关者' },
+                { q: '要点③「确定教学策略」强调的中心是什么？', options: ['学生学到什么', '教师教了什么', '教学内容', '教学时间'],
+                    correctText: '学生学到什么' },
+                { q: '要点⑤「逐级达到顶峰」允许学生以什么方式达成顶峰成果？', options: ['不同时间和方式', '相同时间和方式', '相同时间不同方式',
+                        '不同时间相同方式'
+                    ], correctText: '不同时间和方式' }
+            ]
+        };
+
+        // ---- 综合测评数据（使用 correctText） ----
+        const compRaw = [
+            { id: 'c1', level: 5, dim: 'concept', q: 'OBE 操作范式的核心转变是什么？', options: ['从教到学', '从学到教', '从内容到过程',
+                    '从评价到教学'
+                ], correctText: '从教到学' },
+            { id: 'c2', level: 4, dim: 'relation', q: '关键目的①与关键目的②的关系是？', options: ['目的②是目的①的实现条件',
+                    '目的①是目的②的前提', '两者是并列关系', '两者互不相关'
+                ], correctText: '目的②是目的①的实现条件' },
+            { id: 'c3', level: 3, dim: 'concept', q: '前提①强调的学习方式特点是什么？', options: ['多样性', '单一性', '固定性', '不可变性'],
+                correctText: '多样性' },
+            { id: 'c4', level: 2, dim: 'analysis', q: '原则①「清楚聚焦」属于哪个层面？', options: ['四个操作原则', '实施要点', '核心要素',
+                    '关键前提'
+                ], correctText: '四个操作原则' },
+            { id: 'c5', level: 1, dim: 'practice', q: '要点②「构建课程体系」需要建立什么？', options: ['能力与课程的映射', '教师与课程的关系',
+                    '教材与课程的关系', '评价与课程的关系'
+                ], correctText: '能力与课程的映射' },
+            { id: 'c6', level: 3, dim: 'relation', q: '前提②「成功促进成功」强调了什么？', options: ['成功具有累积效应', '成功与学习无关',
+                    '失败更重要', '学习是孤立的'
+                ], correctText: '成功具有累积效应' },
+            { id: 'c7', level: 2, dim: 'practice', q: '原则③「提高期待」有助于什么？', options: ['激励学生', '打击学生', '增加压力',
+                    '减少学习'
+                ], correctText: '激励学生' },
+            { id: 'c8', level: 1, dim: 'analysis', q: '要点④「自我参考评价」强调的是？', options: ['个人进步', '横向比较', '排名',
+                    '淘汰'
+                ], correctText: '个人进步' },
+            { id: 'c9', level: 2, dim: 'concept', q: '反向设计的根本目的是什么？', options: ['保证目标与结果一致', '简化教学', '增加难度',
+                    '减少评价'
+                ], correctText: '保证目标与结果一致' },
+            { id: 'c10', level: 1, dim: 'practice', q: '逐级达到顶峰的最终目标是什么？', options: ['顶峰成果', '初级阶段', '中间阶段',
+                    '任意阶段'
+                ], correctText: '顶峰成果' }
+        ];
+
+        // ---- 洗牌并存储结果 ----
+        const levelQuizData = {};
+        for (const lv of [5, 4, 3, 2, 1]) {
+            const raw = levelQuizRaw[lv] || [];
+            levelQuizData[lv] = raw.map(q => {
+                const { shuffledOptions, correctIndex } = shuffleQuestion(q);
+                return { ...q, options: shuffledOptions, ans: correctIndex };
+            });
+        }
+
+        const compQuestions = compRaw.map(q => {
+            const { shuffledOptions, correctIndex } = shuffleQuestion(q);
+            return { ...q, options: shuffledOptions, ans: correctIndex };
+        });
+
+        // ============================================================
+        //  5. 渲染层级测评
+        // ============================================================
+        const levelLabels = { 5: '操作范式', 4: '关键目的', 3: '关键前提', 2: '操作原则', 1: '实施要点' };
+        for (const lv of [5, 4, 3, 2, 1]) {
+            const container = document.getElementById(`quiz-l${lv}`);
+            if (!container) continue;
+            const qs = levelQuizData[lv] || [];
+            let html = '';
+            qs.forEach((q, idx) => {
+                html += `<div class="quiz-item" data-qid="l${lv}-q${idx}">`;
+                html += `<div class="quiz-question"><span class="quiz-qnum">Q${idx+1}.</span><span>${q.q}</span></div>`;
+                html += `<ul class="quiz-options" role="listbox">`;
+                const labels = ['A', 'B', 'C', 'D'];
+                q.options.forEach((opt, oi) => {
+                    html +=
+                        `<li class="quiz-option" data-level="${lv}" data-qidx="${idx}" data-answer="${oi}">
+                                    <span class="quiz-option-letter">${labels[oi]}</span> ${opt}
+                                </li>`;
+                });
+                html += `</ul>`;
+                html += `<div class="quiz-feedback" id="fb-l${lv}-${idx}"></div>`;
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+
+            container.querySelectorAll('.quiz-option').forEach(el => {
+                el.addEventListener('click', function() {
+                    const lv2 = parseInt(this.dataset.level);
+                    const qidx = parseInt(this.dataset.qidx);
+                    const ans = parseInt(this.dataset.answer);
+                    const parent = this.closest('.quiz-item');
+                    parent.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove(
+                    'selected'));
+                    this.classList.add('selected');
+                    if (!window._levelAnswers) window._levelAnswers = {};
+                    if (!window._levelAnswers[lv2]) window._levelAnswers[lv2] = {};
+                    window._levelAnswers[lv2][qidx] = ans;
+                });
+            });
+        }
+
+        function submitLevel(lv) {
+            const container = document.getElementById(`quiz-l${lv}`);
+            if (!container) return;
+            const items = container.querySelectorAll('.quiz-item');
+            let correct = 0,
+                total = 0;
+            const answers = window._levelAnswers?.[lv] || {};
+
+            items.forEach((item, idx) => {
+                total++;
+                const userAns = answers[idx];
+                const qData = levelQuizData[lv]?.[idx];
+                const fb = document.getElementById(`fb-l${lv}-${idx}`);
+                const opts = item.querySelectorAll('.quiz-option');
+
+                opts.forEach(opt => opt.classList.remove('correct', 'incorrect'));
+
+                if (!qData) {
+                    fb.className = 'quiz-feedback show incorrect';
+                    fb.innerHTML = '<strong>数据缺失。</strong>';
+                    return;
+                }
+                if (userAns === undefined) {
+                    fb.className = 'quiz-feedback show incorrect';
+                    fb.innerHTML = '<strong>未作答。</strong>请先选择一个选项再提交。';
+                    return;
+                }
+
+                const correctAns = qData.ans;
+                opts.forEach((opt, oi) => {
+                    if (oi === correctAns) opt.classList.add('correct');
+                    else if (oi === userAns && userAns !== correctAns) opt.classList.add('incorrect');
+                });
+
+                if (userAns === correctAns) {
+                    correct++;
+                    fb.className = 'quiz-feedback show correct';
+                    fb.innerHTML = '✅ 回答正确！';
+                } else {
+                    fb.className = 'quiz-feedback show incorrect';
+                    fb.innerHTML = `❌ 回答错误，正确答案是 ${String.fromCharCode(65 + correctAns)}。`;
+                }
+            });
+
+            document.getElementById(`score-l${lv}`).textContent = `${correct}/${total}`;
+            if (!window._levelScores) window._levelScores = {};
+            window._levelScores[lv] = correct / total;
+            updateAllVisuals();
+        }
+
+        function resetLevel(lv) {
+            const container = document.getElementById(`quiz-l${lv}`);
+            if (!container) return;
+            container.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+            });
+            container.querySelectorAll('.quiz-feedback').forEach(fb => {
+                fb.className = 'quiz-feedback';
+                fb.innerHTML = '';
+            });
+            if (window._levelAnswers) delete window._levelAnswers[lv];
+            if (window._levelScores) delete window._levelScores[lv];
+            document.getElementById(`score-l${lv}`).textContent = '—/3';
+            updateAllVisuals();
+        }
+
+        // ============================================================
+        //  6. 渲染综合测评
+        // ============================================================
+        const compContainer = document.getElementById('comp-quiz-container');
+        let compHtml = '';
+        compQuestions.forEach((q, idx) => {
+            compHtml += `<div class="quiz-item" id="comp-${q.id}">`;
+            compHtml += `<div class="quiz-question"><span class="quiz-qnum">Q${idx+1}.</span><span>${q.q}</span></div>`;
+            compHtml += `<ul class="quiz-options" role="listbox">`;
+            const labels = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, oi) => {
+                compHtml +=
+                    `<li class="quiz-option" data-comp-qid="${q.id}" data-answer="${oi}"><span class="quiz-option-letter">${labels[oi]}</span> ${opt}</li>`;
+            });
+            compHtml += `</ul>`;
+            compHtml += `<div class="quiz-feedback" id="comp-fb-${q.id}"></div>`;
+            compHtml += `</div>`;
+        });
+        compContainer.innerHTML = compHtml;
+
+        let compAnswers = {};
+        let compSubmitted = false;
+
+        compContainer.querySelectorAll('.quiz-option').forEach(el => {
+            el.addEventListener('click', function() {
+                if (compSubmitted) return;
+                const qid = this.dataset.compQid;
+                const ans = parseInt(this.dataset.answer);
+                const parent = this.closest('.quiz-item');
+                parent.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                compAnswers[qid] = ans;
+            });
+        });
+
+        function submitComprehensive() {
+            if (compSubmitted) {
+                alert('测评已提交，如需重新测试请点击"重置"。');
+                return;
+            }
+            let correct = 0;
+            const levelScores = { 5: { total: 0, correct: 0 }, 4: { total: 0, correct: 0 }, 3: { total: 0,
+                    correct: 0 }, 2: { total: 0, correct: 0 }, 1: { total: 0, correct: 0 } };
+            const dimScores = { concept: { total: 0, correct: 0 }, relation: { total: 0, correct: 0 },
+                practice: { total: 0, correct: 0 }, analysis: { total: 0, correct: 0 } };
+
+            compQuestions.forEach(q => {
+                const userAns = compAnswers[q.id];
+                const fb = document.getElementById(`comp-fb-${q.id}`);
+                const opts = document.querySelectorAll(`.quiz-option[data-comp-qid="${q.id}"]`);
+
+                levelScores[q.level].total++;
+                dimScores[q.dim].total++;
+
+                opts.forEach(opt => opt.classList.remove('correct', 'incorrect'));
+
+                if (userAns === undefined) {
+                    fb.className = 'quiz-feedback show incorrect';
+                    fb.innerHTML = '<strong>未作答。</strong>';
+                    return;
+                }
+
+                if (userAns === q.ans) {
+                    correct++;
+                    levelScores[q.level].correct++;
+                    dimScores[q.dim].correct++;
+                    opts.forEach(opt => {
+                        if (parseInt(opt.dataset.answer) === q.ans) opt.classList.add('correct');
+                    });
+                    fb.className = 'quiz-feedback show correct';
+                    fb.innerHTML = '✅ 回答正确！';
+                } else {
+                    opts.forEach(opt => {
+                        if (parseInt(opt.dataset.answer) === q.ans) opt.classList.add('correct');
+                        if (parseInt(opt.dataset.answer) === userAns) opt.classList.add('incorrect');
+                    });
+                    fb.className = 'quiz-feedback show incorrect';
+                    fb.innerHTML = `❌ 回答错误，正确答案是 ${String.fromCharCode(65 + q.ans)}。`;
+                }
+            });
+
+            compSubmitted = true;
+            document.getElementById('comp-score').textContent = correct;
+
+            window._compScores = { levelScores, dimScores, total: correct };
+            updateAllVisuals();
+            updateHeatmap(levelScores, dimScores);
+            updateInsights(levelScores, dimScores, correct);
+            document.getElementById('visualization').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetComprehensive() {
+            compAnswers = {};
+            compSubmitted = false;
+            compQuestions.forEach(q => {
+                const opts = document.querySelectorAll(`.quiz-option[data-comp-qid="${q.id}"]`);
+                opts.forEach(opt => opt.classList.remove('selected', 'correct', 'incorrect'));
+                const fb = document.getElementById(`comp-fb-${q.id}`);
+                fb.className = 'quiz-feedback';
+                fb.innerHTML = '';
+            });
+            document.getElementById('comp-score').textContent = '—';
+            window._compScores = null;
+            updateAllVisuals();
+            resetHeatmap();
+            resetInsights();
+        }
+
+        // ============================================================
+        //  7. 可视化：雷达 + 条形 + 热力 + 洞察
+        // ============================================================
+        function getLevelScores() {
+            const scores = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+            if (window._compScores) {
+                const ls = window._compScores.levelScores;
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    const d = ls[lv];
+                    scores[lv] = d.total > 0 ? Math.round(d.correct / d.total * 100) : 0;
+                }
+                return scores;
+            }
+            if (window._levelScores) {
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    scores[lv] = window._levelScores[lv] !== undefined ? Math.round(window._levelScores[lv] * 100) : 0;
+                }
+                return scores;
+            }
+            return { 5: 72, 4: 68, 3: 65, 2: 70, 1: 75 };
+        }
+
+        function drawRadar(scores) {
+            const canvas = document.getElementById('radarCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const cx = W / 2,
+                cy = H / 2 + 6;
+            const maxR = Math.min(W, H) / 2 - 40;
+            ctx.clearRect(0, 0, W, H);
+            const labels = ['L5 操作范式', 'L4 关键目的', 'L3 关键前提', 'L2 操作原则', 'L1 实施要点'];
+            const angles = [0, 72, 144, 216, 288].map(deg => deg * Math.PI / 180 - Math.PI / 2);
+            // 网格
+            [0.25, 0.5, 0.75, 1.0].forEach(lv => {
+                const r = maxR * lv;
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const x = cx + r * Math.cos(angles[i]);
+                    const y = cy + r * Math.sin(angles[i]);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = '#dce3ec';
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+            });
+            // 轴线
+            ctx.strokeStyle = '#e8ecf1';
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < 5; i++) {
+                const x = cx + maxR * Math.cos(angles[i]);
+                const y = cy + maxR * Math.sin(angles[i]);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            // 数据
+            const data = [scores[5] / 100, scores[4] / 100, scores[3] / 100, scores[2] / 100, scores[1] / 100];
+            const points = data.map((v, i) => {
+                const r = maxR * v;
+                return { x: cx + r * Math.cos(angles[i]), y: cy + r * Math.sin(angles[i]) };
+            });
+            ctx.beginPath();
+            points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.25)';
+            ctx.fill();
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#0ea5e9';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            // 标签
+            ctx.fillStyle = '#1a2332';
+            ctx.font = '11px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const labelOffsets = [{ dx: 0, dy: -18 }, { dx: 22, dy: -4 }, { dx: 22, dy: 8 }, { dx: 0, dy: 22 }, { dx: -22,
+                    dy: 8 }];
+            labels.forEach((label, i) => {
+                const x = cx + (maxR + 16) * Math.cos(angles[i]) + labelOffsets[i].dx;
+                const y = cy + (maxR + 16) * Math.sin(angles[i]) + labelOffsets[i].dy;
+                ctx.fillText(label, x, y);
+            });
+            data.forEach((v, i) => {
+                const p = points[i];
+                ctx.fillStyle = '#0ea5e9';
+                ctx.font = 'bold 12px system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                const label = Math.round(v * 100) + '%';
+                const offsetX = (p.x - cx) * 0.15;
+                const offsetY = (p.y - cy) * 0.15 - 8;
+                ctx.fillText(label, p.x + offsetX, p.y + offsetY);
+            });
+        }
+
+        function updateBars(scores) {
+            for (const lv of [5, 4, 3, 2, 1]) {
+                const fill = document.querySelector(`.mastery-bar-fill[data-level="${lv}"]`);
+                const val = document.getElementById(`bar-val-${lv}`);
+                if (fill) fill.style.width = `${scores[lv]}%`;
+                if (val) val.textContent = `${scores[lv]}%`;
+            }
+        }
+
+        function initHeatmap() {
+            const tbody = document.getElementById('heatmap-body');
+            const levelLabels = { 5: 'L5 操作范式', 4: 'L4 关键目的', 3: 'L3 关键前提', 2: 'L2 操作原则', 1: 'L1 实施要点' };
+            let html = '';
+            for (const lv of [5, 4, 3, 2, 1]) {
+                html += `<tr><td>${levelLabels[lv]}</td>`;
+                for (const dk of ['concept', 'relation', 'practice', 'analysis', 'total']) {
+                    html += `<td class="heat-cell heat-none" data-dim="${dk}" data-level="${lv}">—</td>`;
+                }
+                html += `</tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+        initHeatmap();
+
+        function updateHeatmap(levelScores, dimScores) {
+            const tbody = document.getElementById('heatmap-body');
+            const dimKeys = ['concept', 'relation', 'practice', 'analysis', 'total'];
+            for (const lv of [5, 4, 3, 2, 1]) {
+                const row = tbody.children[5 - lv];
+                const cells = row.querySelectorAll('.heat-cell');
+                for (let i = 0; i < 4; i++) {
+                    const dk = dimKeys[i];
+                    const qs = compQuestions.filter(q => q.level === lv && q.dim === dk);
+                    const correct = qs.filter(q => compAnswers[q.id] === q.ans).length;
+                    const pct = qs.length > 0 ? Math.round(correct / qs.length * 100) : null;
+                    const cell = cells[i];
+                    if (pct !== null) {
+                        cell.textContent = `${pct}%`;
+                        cell.className = `heat-cell ${pct >= 80 ? 'heat-high' : pct >= 60 ? 'heat-med' : 'heat-low'}`;
+                    } else {
+                        cell.textContent = '—';
+                        cell.className = 'heat-cell heat-none';
+                    }
+                }
+                const totalCell = cells[4];
+                const ls = levelScores[lv];
+                if (ls && ls.total > 0) {
+                    const pct = Math.round(ls.correct / ls.total * 100);
+                    totalCell.textContent = `${pct}%`;
+                    totalCell.className = `heat-cell ${pct >= 80 ? 'heat-high' : pct >= 60 ? 'heat-med' : 'heat-low'}`;
+                } else {
+                    totalCell.textContent = '—';
+                    totalCell.className = 'heat-cell heat-none';
+                }
+            }
+        }
+
+        function resetHeatmap() {
+            document.querySelectorAll('#heatmap-body .heat-cell').forEach(cell => {
+                cell.textContent = '—';
+                cell.className = 'heat-cell heat-none';
+            });
+        }
+
+        function updateInsights(levelScores, dimScores, totalCorrect) {
+            const totalPct = Math.round(totalCorrect / compQuestions.length * 100);
+            let strongest = { level: 5, pct: -1 };
+            let weakest = { level: 5, pct: 101 };
+            for (const lv of [5, 4, 3, 2, 1]) {
+                const d = levelScores[lv];
+                if (d && d.total > 0) {
+                    const pct = d.correct / d.total * 100;
+                    if (pct > strongest.pct) strongest = { level: lv, pct };
+                    if (pct < weakest.pct) weakest = { level: lv, pct };
+                }
+            }
+            const levelNames = { 5: '操作范式层', 4: '关键目的层', 3: '关键前提层', 2: '操作原则层', 1: '实施要点层' };
+            const advices = {
+                5: '建议从 Spady 的原著出发，深入理解范式转变的哲学基础。',
+                4: '建议结合具体案例，思考关键目的如何在教育实践中落地。',
+                3: '建议研究三个前提在教学实践中的具体体现与相互作用。',
+                2: '建议从教学设计的角度，体会四个原则的指导意义。',
+                1: '建议从具体教学场景出发，逐一实践五个实施要点。'
+            };
+            const grid = document.getElementById('insight-grid');
+            grid.innerHTML = `
+                        <div class="insight-card strength">
+                            <div class="insight-title">💪 优势领域</div>
+                            <div class="insight-desc">你在 <strong>${levelNames[strongest.level]}</strong>（${Math.round(strongest.pct)}%）表现最佳，说明对该层知识掌握扎实。继续保持，可尝试向更深层拓展。</div>
+                        </div>
+                        <div class="insight-card gap">
+                            <div class="insight-title">⚠️ 待提升项</div>
+                            <div class="insight-desc"><strong>${levelNames[weakest.level]}</strong>（${Math.round(weakest.pct)}%）是薄弱环节。${advices[weakest.level] || '建议加强该层级的学习与练习。'}</div>
+                        </div>
+                        <div class="insight-card action">
+                            <div class="insight-title">🚀 学习路径建议</div>
+                            <div class="insight-desc">整体掌握度 <strong>${totalPct}%</strong>。建议按「自顶向下理解、自底向上建构」的规律：先理解 L5 操作范式的哲学，再逐层向下；实践时从 L1 实施要点入手，逐步向上建构体系。</div>
+                        </div>
+                    `;
+        }
+
+        function resetInsights() {
+            const grid = document.getElementById('insight-grid');
+            grid.innerHTML = `
+                        <div class="insight-card strength"><div class="insight-title">💪 优势领域</div><div class="insight-desc">完成测评后，系统将分析你的优势层级与能力维度。</div></div>
+                        <div class="insight-card gap"><div class="insight-title">⚠️ 待提升项</div><div class="insight-desc">识别薄弱环节，精准定位知识盲区。</div></div>
+                        <div class="insight-card action"><div class="insight-title">🚀 学习路径</div><div class="insight-desc">基于 OBE 自底向上的规律，推荐个性化进阶路径。</div></div>
+                    `;
+        }
+
+        function updateAllVisuals() {
+            const scores = getLevelScores();
+            updateBars(scores);
+            drawRadar(scores);
+        }
+
+        // ============================================================
+        //  8. 初始化
+        // ============================================================
+        updateAllVisuals();
+
+        document.querySelectorAll('.nav-links a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const target = document.getElementById(targetId);
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        console.log('✅ OBE 金字塔知识智能体已启动 (答案随机分布)');
+        console.log('📊 节点数:', Object.keys(nodeDataMap).length);
+        console.log('📝 分层测评:', Object.values(levelQuizData).reduce((s, a) => s + a.length, 0), '道');
+        console.log('📝 综合测评:', compQuestions.length, '道');
+        console.log('🎲 每道题正确选项位置已随机打乱');
+    </script>
+
+    <script>
+        // ============================================================
+        //  9. 学生结果提交 + 教师端统计（新增）
+        // ============================================================
+        (function() {
+            'use strict';
+
+            // ---- 教师密码：老师可自行修改这里的数字 ----
+            window.TEACHER_PASSWORD = '123456';
+            // ---- 在线收集网址（部署时老师填好，学生端自动使用；也可用网址参数 ?submit=xxx 覆盖）----
+            window.SUBMIT_ENDPOINT = 'https://webhook.site/7468cfaa-b46d-4edf-ad74-f2b6dbdf1f49';
+
+            const IDENTITY_KEY = 'obe_identity_v1';
+            const RESULTS_KEY = 'obe_teacher_results_v1';
+            const UNLOCK_KEY = 'obe_teacher_unlocked';
+            const ENDPOINT_KEY = 'obe_submit_endpoint_v1';
+            const SUBMITTED_KEY = 'obe_online_submitted_v1';
+            const LEVEL_NAMES = { 5: 'L5 操作范式', 4: 'L4 关键目的', 3: 'L3 关键前提', 2: 'L2 操作原则', 1: 'L1 实施要点' };
+            const DIM_NAMES = { concept: '概念理解', relation: '关系辨析', practice: '实践应用', analysis: '综合分析' };
+
+            window._pageStartTime = window._pageStartTime || Date.now();
+
+            function $(id) { return document.getElementById(id); }
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            // ---- 轻提示 ----
+            let toastTimer = null;
+            function toast(msg) {
+                let el = $('globalToast');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'globalToast';
+                    el.className = 'toast';
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3200);
+            }
+
+            function downloadFile(filename, content, mime) {
+                const blob = new Blob([content], { type: mime || 'application/octet-stream;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 800);
+            }
+
+            // ============================================================
+            //  学生身份
+            // ============================================================
+            function saveIdentity() {
+                const name = $('studentName').value.trim();
+                const sid = $('studentId').value.trim();
+                if (!name || !sid) { toast('请先填写姓名和学号'); return; }
+                const identity = { name: name, studentId: sid, savedAt: new Date().toISOString() };
+                try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch (e) {}
+                toast('信息已保存 ✅');
+            }
+
+            function loadIdentity() {
+                try {
+                    const raw = localStorage.getItem(IDENTITY_KEY);
+                    if (raw) {
+                        const id = JSON.parse(raw);
+                        if (id) {
+                            $('studentName').value = id.name || '';
+                            $('studentId').value = id.studentId || '';
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            function currentIdentity() {
+                const name = $('studentName').value.trim();
+                const sid = $('studentId').value.trim();
+                if (name && sid) return { name: name, studentId: sid };
+                try {
+                    const raw = localStorage.getItem(IDENTITY_KEY);
+                    if (raw) {
+                        const id = JSON.parse(raw);
+                        if (id && id.name && id.studentId) return { name: id.name, studentId: id.studentId };
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            // ============================================================
+            //  学生：生成 / 导出 / 复制结果
+            // ============================================================
+            function buildResultPayload() {
+                const identity = currentIdentity();
+                if (!identity) { toast('请先在上方填写并保存姓名、学号'); return null; }
+
+                const comp = window._compScores || null;
+                const detail = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) {
+                    const userAns = compAnswers[q.id];
+                    return {
+                        id: q.id,
+                        level: q.level,
+                        dim: q.dim,
+                        question: q.q,
+                        userAnswer: userAns === undefined ? null : userAns,
+                        correct: userAns === q.ans
+                    };
+                });
+
+                const levelDetail = {};
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    const qs = (typeof levelQuizData !== 'undefined' ? levelQuizData : {})[lv] || [];
+                    const ansMap = (window._levelAnswers || {})[lv] || {};
+                    levelDetail[lv] = qs.map(function(q, idx) {
+                        const userAns = ansMap[idx];
+                        return {
+                            id: 'L' + lv + '-Q' + (idx + 1),
+                            level: lv,
+                            question: q.q,
+                            userAnswer: userAns === undefined ? null : userAns,
+                            correct: userAns === q.ans
+                        };
+                    });
+                }
+
+                const payload = {
+                    app: 'OBE金字塔学习智能体',
+                    version: 2,
+                    type: 'student-result',
+                    name: identity.name,
+                    studentId: identity.studentId,
+                    submittedAt: new Date().toISOString(),
+                    durationSec: Math.round((Date.now() - window._pageStartTime) / 1000),
+                    compScore: comp ? comp.total : null,
+                    compTotal: (typeof compQuestions !== 'undefined' ? compQuestions : []).length,
+                    compLevelScores: comp ? comp.levelScores : null,
+                    dimScores: comp ? comp.dimScores : null,
+                    levelScores: window._levelScores || {},
+                    answers: {
+                        level: window._levelAnswers || {},
+                        comp: compAnswers || {}
+                    },
+                    detail: detail,
+                    levelDetail: levelDetail
+                };
+                return payload;
+            }
+
+            function exportMyResult() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                downloadFile('OBE结果_' + payload.name + '_' + payload.studentId + '.json', JSON.stringify(payload), 'application/json;charset=utf-8');
+                toast('结果文件已下载 ✅ 请把文件发给老师');
+            }
+
+            function fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                let ok = false;
+                try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                ta.remove();
+                return ok;
+            }
+
+            function copyMyResult() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                const text = JSON.stringify(payload);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(
+                        function() { toast('结果文本已复制 ✅ 请粘贴发给老师'); },
+                        function() { toast(fallbackCopy(text) ? '结果文本已复制 ✅ 请粘贴发给老师' : '复制失败，请改用“下载结果文件”'); }
+                    );
+                } else {
+                    toast(fallbackCopy(text) ? '结果文本已复制 ✅ 请粘贴发给老师' : '复制失败，请改用“下载结果文件”');
+                }
+            }
+
+            // ============================================================
+            //  在线收集（学生提交 / 老师设置与拉取）
+            // ============================================================
+            function getSubmitEndpoint() {
+                try {
+                    const p = new URLSearchParams(location.search);
+                    const q = p.get('submit');
+                    if (q) return q;
+                } catch (e) {}
+                try {
+                    const saved = localStorage.getItem(ENDPOINT_KEY);
+                    if (saved) return saved;
+                } catch (e) {}
+                return window.SUBMIT_ENDPOINT || '';
+            }
+
+            function getOnlineSubmittedMap() {
+                try { return JSON.parse(localStorage.getItem(SUBMITTED_KEY) || '{}') || {}; }
+                catch (e) { return {}; }
+            }
+
+            const ONLINE_BOX_DEFAULT =
+                '<p style="font-weight:700;">🌐 在线提交</p>' +
+                '<p style="margin-top:var(--sp-1);">本页面已接入在线收集，点击下方按钮即可把结果直接提交给老师，无需下载文件。</p>' +
+                '<button class="btn btn-primary" type="button" onclick="submitResultOnline()">🚀 在线提交我的结果</button>';
+
+            function renderOnlineBox() {
+                const box = $('onlineSubmitBox');
+                if (!box) return;
+                const identity = currentIdentity();
+                const done = getOnlineSubmittedMap();
+                const submitted = identity && done[identity.studentId];
+                if (getSubmitEndpoint() && identity) {
+                    if (submitted) {
+                        box.className = 'online-submit-note success';
+                        box.innerHTML = '<p style="font-weight:700;">✅ 你已在线提交过结果，无需重复提交</p>';
+                    } else {
+                        box.className = 'online-submit-note';
+                        box.innerHTML = ONLINE_BOX_DEFAULT;
+                    }
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            }
+
+            function submitResultOnline() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) {
+                    toast('本页面未启用在线提交，请用“下载结果文件”发给老师');
+                    return;
+                }
+                const done = getOnlineSubmittedMap();
+                if (done[payload.studentId]) {
+                    toast('你已在线提交过结果');
+                    return;
+                }
+                const box = $('onlineSubmitBox');
+                const body = JSON.stringify(payload);
+                const fail = function(msg) {
+                    if (box) {
+                        box.className = 'online-submit-note error';
+                        box.innerHTML = '<p style="font-weight:700;">❌ 提交失败：' + msg + '</p>' +
+                            '<p style="margin-top:var(--sp-1);font-size:var(--fs-sm);">请改用“下载我的结果文件”或“复制结果文本”发给老师。</p>';
+                    }
+                    toast('提交失败：' + msg);
+                };
+                fetch(endpoint, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                }).then(function(r) {
+                    if (r.ok) {
+                        done[payload.studentId] = new Date().toISOString();
+                        try { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(done)); } catch (e) {}
+                        if (box) {
+                            box.className = 'online-submit-note success';
+                            box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
+                        }
+                        toast('在线提交成功 ✅');
+                    } else {
+                        fail('服务器返回 ' + r.status);
+                    }
+                }).catch(function() {
+                    // fetch 跨域被拦截时，退回 sendBeacon（浏览器直接发送，不校验跨域）
+                    let ok = false;
+                    try {
+                        ok = navigator.sendBeacon(endpoint, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+                    } catch (e) { ok = false; }
+                    if (ok) {
+                        done[payload.studentId] = new Date().toISOString();
+                        try { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(done)); } catch (e) {}
+                        if (box) {
+                            box.className = 'online-submit-note success';
+                            box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
+                        }
+                        toast('在线提交成功 ✅');
+                    } else {
+                        fail('网络错误，请检查网络后重试');
+                    }
+                });
+            }
+
+            function saveEndpoint() {
+                const url = $('submitEndpoint').value.trim();
+                if (!url) { toast('请先填写收集网址'); return; }
+                try { localStorage.setItem(ENDPOINT_KEY, url); } catch (e) {}
+                toast('收集网址已保存 ✅ 学生端将自动显示“在线提交”');
+                renderOnlineBox();
+            }
+
+            function testEndpoint() {
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) { toast('请先填写并保存收集网址'); return; }
+                const test = {
+                    app: 'OBE金字塔学习智能体', type: 'connection-test',
+                    studentId: 'TEST', name: '连接测试', time: new Date().toISOString()
+                };
+                fetch(endpoint, {
+                    method: 'POST', mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(test)
+                }).then(function(r) {
+                    toast(r.ok ? '连接成功 ✅ 已发送一条测试数据' : '连接异常：HTTP ' + r.status);
+                }).catch(function() {
+                    toast('连接失败：请检查网址或网络');
+                });
+            }
+
+            function pullOnlineResults() {
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) { toast('请先填写并保存收集网址'); return; }
+                const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
+                if (!m) {
+                    toast('该网址暂不支持自动拉取，请把学生提交内容粘贴到上方输入框导入');
+                    return;
+                }
+                const apiUrl = 'https://webhook.site/token/' + m[1] + '/requests?per_page=200';
+                fetch(apiUrl, { headers: { 'Accept': 'application/json' } }).then(function(r) {
+                    return r.json();
+                }).then(function(data) {
+                    const items = (data && Array.isArray(data.data)) ? data.data : [];
+                    if (!items.length) { toast('暂未收到任何在线提交'); return; }
+                    const store = loadResults();
+                    let imported = 0;
+                    items.forEach(function(it) {
+                        if (it && it.content && addResultPayload(String(it.content), store).ok) imported++;
+                    });
+                    saveResults(store);
+                    renderTeacherDashboard();
+                    toast('拉取完成：新增/更新 ' + imported + ' 份结果');
+                }).catch(function() {
+                    toast('浏览器拦截了自动拉取（跨域限制），请复制下面网址的内容后粘贴到上方输入框导入：' + apiUrl);
+                });
+            }
+
+            function refreshSubmitCard() {
+                const card = $('submitResultCard');
+                if (!card) return;
+                const comp = window._compScores;
+                if (!comp) { card.classList.add('hidden'); return; }
+                const identity = currentIdentity();
+                $('submitWho').textContent = identity ? identity.name + '（' + identity.studentId + '）' : '未填写（请先在上方填写并保存）';
+                $('submitScore').textContent = comp.total;
+                card.classList.remove('hidden');
+                renderOnlineBox();
+            }
+
+            // 提交/重置后刷新提交卡片
+            ['submitComprehensive', 'resetComprehensive'].forEach(function(fn) {
+                const orig = window[fn];
+                if (typeof orig === 'function') {
+                    window[fn] = function() {
+                        const ret = orig.apply(this, arguments);
+                        refreshSubmitCard();
+                        return ret;
+                    };
+                }
+            });
+
+            // ============================================================
+            //  教师端：数据存取
+            // ============================================================
+            function loadResults() {
+                try {
+                    const raw = localStorage.getItem(RESULTS_KEY);
+                    if (!raw) return {};
+                    const data = JSON.parse(raw);
+                    return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+                } catch (e) { return {}; }
+            }
+
+            function saveResults(data) {
+                try { localStorage.setItem(RESULTS_KEY, JSON.stringify(data)); }
+                catch (e) { toast('保存失败：浏览器存储空间不足'); }
+            }
+
+            function normalizeRecord(p) {
+                if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+                if (!(p.studentId || p.name)) return null;
+                return {
+                    app: p.app || 'OBE金字塔学习智能体',
+                    version: p.version || 1,
+                    type: 'student-result',
+                    name: p.name || '',
+                    studentId: p.studentId || '',
+                    submittedAt: p.submittedAt || '',
+                    durationSec: typeof p.durationSec === 'number' ? p.durationSec : null,
+                    compScore: typeof p.compScore === 'number' ? p.compScore : null,
+                    compTotal: typeof p.compTotal === 'number' ? p.compTotal : 10,
+                    compLevelScores: p.compLevelScores || null,
+                    dimScores: p.dimScores || null,
+                    levelScores: p.levelScores || {},
+                    answers: p.answers || { level: {}, comp: {} },
+                    detail: Array.isArray(p.detail) ? p.detail : null,
+                    levelDetail: p.levelDetail || null
+                };
+            }
+
+            // 把一份文本（可能是单条结果 / 数组 / 备份 {students:[...]}）加入仓库
+            function addResultPayload(text, store) {
+                let parsed = null;
+                try { parsed = JSON.parse(text); } catch (e) { return { ok: false, reason: 'invalid' }; }
+                // webhook.site 格式：{data:[{content:"..."}]}
+                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+                    let ok = 0;
+                    parsed.data.forEach(function(it) {
+                        if (it && typeof it.content === 'string' && addResultPayload(it.content, store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                if (Array.isArray(parsed)) {
+                    // webhook.site 请求数组：[{content:"..."}, ...]
+                    if (parsed.length && parsed[0] && typeof parsed[0].content === 'string') {
+                        let ok = 0;
+                        parsed.forEach(function(it) {
+                            if (it && typeof it.content === 'string' && addResultPayload(it.content, store).ok) ok++;
+                        });
+                        return { ok: ok > 0 };
+                    }
+                    let ok = 0;
+                    parsed.forEach(function(p) {
+                        if (addResultPayload(JSON.stringify(p), store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.students)) {
+                    let ok = 0;
+                    parsed.students.forEach(function(p) {
+                        if (addResultPayload(JSON.stringify(p), store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                const rec = normalizeRecord(parsed);
+                if (!rec) return { ok: false, reason: 'not-result' };
+                const key = String(rec.studentId || rec.name).trim();
+                if (!key) return { ok: false, reason: 'no-key' };
+                const old = store[key];
+                if (old && old.submittedAt && rec.submittedAt && rec.submittedAt < old.submittedAt) {
+                    return { ok: false, reason: 'older' };
+                }
+                store[key] = rec;
+                return { ok: true };
+            }
+
+            function importResultFiles(event) {
+                const files = Array.from(event.target.files || []);
+                if (!files.length) return;
+                const store = loadResults();
+                let imported = 0;
+                let skipped = 0;
+                const readNext = function(i) {
+                    if (i >= files.length) {
+                        saveResults(store);
+                        renderTeacherDashboard();
+                        toast('导入完成：成功 ' + imported + ' 份' + (skipped ? '，跳过无效/重复 ' + skipped + ' 份' : ''));
+                        event.target.value = '';
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const r = addResultPayload(String(reader.result || ''), store);
+                        if (r.ok) imported++; else skipped++;
+                        readNext(i + 1);
+                    };
+                    reader.onerror = function() { skipped++; readNext(i + 1); };
+                    reader.readAsText(files[i], 'utf-8');
+                };
+                readNext(0);
+            }
+
+            function importPastedResults() {
+                const textarea = $('pasteResults');
+                const text = (textarea.value || '').trim();
+                if (!text) { toast('请先粘贴学生发来的结果文本'); return; }
+                const store = loadResults();
+                let imported = 0;
+                let skipped = 0;
+                let whole = null;
+                try { whole = JSON.parse(text); } catch (e) { whole = null; }
+                if (whole && (Array.isArray(whole) || (whole && Array.isArray(whole.students)) || (whole && typeof whole === 'object' && (whole.studentId || whole.name)))) {
+                    const r = addResultPayload(text, store);
+                    if (r.ok) imported++; else skipped++;
+                } else {
+                    const lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+                    lines.forEach(function(line) {
+                        const r = addResultPayload(line, store);
+                        if (r.ok) imported++; else skipped++;
+                    });
+                }
+                saveResults(store);
+                renderTeacherDashboard();
+                textarea.value = '';
+                toast('导入完成：成功 ' + imported + ' 份' + (skipped ? '，跳过无效/重复 ' + skipped + ' 份' : ''));
+            }
+
+            function clearAllResults() {
+                if (!confirm('确定清空全部学生结果数据吗？此操作不可恢复。')) return;
+                try { localStorage.removeItem(RESULTS_KEY); } catch (e) {}
+                renderTeacherDashboard();
+                toast('已清空全部数据');
+            }
+
+            function exportAllJson() {
+                const store = loadResults();
+                const records = Object.values(store);
+                if (!records.length) { toast('暂无数据可备份'); return; }
+                downloadFile('OBE全部学生结果备份_' + new Date().toISOString().slice(0, 10) + '.json',
+                    JSON.stringify({ app: 'OBE金字塔学习智能体', exportedAt: new Date().toISOString(), students: records }, null, 2),
+                    'application/json;charset=utf-8');
+            }
+
+            // ============================================================
+            //  教师端：统计与图表
+            // ============================================================
+            function pctOf(c, t) {
+                return t > 0 ? Math.round(c / t * 100) : 0;
+            }
+
+            function barRow(label, widthPct, valueText, cls) {
+                const safe = escapeHtml(label);
+                return '<div class="t-bar-row"><div class="t-bar-label" title="' + safe + '">' + safe + '</div>' +
+                    '<div class="t-bar-track"><div class="t-bar-fill ' + (cls || '') + '" style="width:' + widthPct + '%"></div></div>' +
+                    '<div class="t-bar-val">' + valueText + '</div></div>';
+            }
+
+            function barPctClass(pct) {
+                return pct < 60 ? 'low' : (pct < 80 ? 'mid' : '');
+            }
+
+            function renderStats(records) {
+                const scores = records.map(function(r) { return r.compScore; }).filter(function(v) { return v !== null; });
+                const durations = records.map(function(r) { return r.durationSec; }).filter(function(v) { return v !== null && v > 0; });
+                const avg = scores.length ? Math.round(scores.reduce(function(a, b) { return a + b; }, 0) / scores.length * 10) / 10 : null;
+                const max = scores.length ? Math.max.apply(null, scores) : null;
+                const min = scores.length ? Math.min.apply(null, scores) : null;
+                const avgDur = durations.length ? Math.round(durations.reduce(function(a, b) { return a + b; }, 0) / durations.length / 60 * 10) / 10 : null;
+                const cards = [
+                    { num: records.length, label: '已收集学生' },
+                    { num: scores.length, label: '已交综合测评' },
+                    { num: avg === null ? '—' : avg + ' / 10', label: '班级平均分' },
+                    { num: max === null ? '—' : max + ' / 10', label: '最高分' },
+                    { num: min === null ? '—' : min + ' / 10', label: '最低分' },
+                    { num: avgDur === null ? '—' : avgDur + ' 分钟', label: '平均用时' }
+                ];
+                $('tStats').innerHTML = cards.map(function(c) {
+                    return '<div class="t-stat-card"><div class="num">' + c.num + '</div><div class="label">' + c.label + '</div></div>';
+                }).join('');
+            }
+
+            function renderScoreDist(records) {
+                const scores = records.map(function(r) { return r.compScore; }).filter(function(v) { return v !== null; });
+                if (!scores.length) { $('scoreDist').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无综合测评数据</p>'; return; }
+                const buckets = [
+                    { name: '90-100 分', min: 9, max: 10 },
+                    { name: '80-89 分', min: 8, max: 8.99 },
+                    { name: '70-79 分', min: 7, max: 7.99 },
+                    { name: '60-69 分', min: 6, max: 6.99 },
+                    { name: '60 分以下', min: 0, max: 5.99 }
+                ];
+                let html = '';
+                buckets.forEach(function(b) {
+                    const count = scores.filter(function(s) { return s >= b.min && s <= b.max; }).length;
+                    html += barRow(b.name, Math.round(count / scores.length * 100), count + ' 人', count ? '' : '');
+                });
+                $('scoreDist').innerHTML = html;
+            }
+
+            function studentLevelPcts(r) {
+                const out = {};
+                const cl = r.compLevelScores;
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    if (cl && cl[lv] && cl[lv].total > 0) {
+                        out[lv] = pctOf(cl[lv].correct, cl[lv].total);
+                    } else if (r.levelScores && typeof r.levelScores[lv] === 'number') {
+                        out[lv] = Math.round(r.levelScores[lv] * 100);
+                    }
+                }
+                return out;
+            }
+
+            function renderLevelAvg(records) {
+                let html = '';
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    const vals = records.map(studentLevelPcts).map(function(p) { return p[lv]; }).filter(function(v) { return v !== undefined; });
+                    if (!vals.length) { html += barRow(LEVEL_NAMES[lv], 0, '—'); continue; }
+                    const avg = Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+                    html += barRow(LEVEL_NAMES[lv] + '（' + vals.length + '人）', avg, avg + '%', barPctClass(avg));
+                }
+                $('levelAvg').innerHTML = html;
+            }
+
+            function renderCompAcc(records) {
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const agg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        agg[q.id].t++;
+                        if (q.correct) agg[q.id].c++;
+                    });
+                });
+                const ids = Object.keys(agg).sort(function(a, b) {
+                    const ia = orderIds.indexOf(a);
+                    const ib = orderIds.indexOf(b);
+                    if (ia === -1 && ib === -1) return a.localeCompare(b);
+                    if (ia === -1) return 1;
+                    if (ib === -1) return -1;
+                    return ia - ib;
+                });
+                if (!ids.length) { $('compAcc').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无综合测评数据</p>'; return; }
+                let html = '';
+                ids.forEach(function(id) {
+                    const d = agg[id];
+                    const pct = pctOf(d.c, d.t);
+                    html += barRow('Q' + (orderIds.indexOf(id) + 1) + ' · ' + d.text, pct, pct + '%', barPctClass(pct));
+                });
+                $('compAcc').innerHTML = html;
+            }
+
+            function renderLevelAcc(records) {
+                const agg = {};
+                records.forEach(function(r) {
+                    const ld = r.levelDetail || {};
+                    for (const lv of [5, 4, 3, 2, 1]) {
+                        (ld[lv] || []).forEach(function(q) {
+                            if (!q || typeof q.correct !== 'boolean') return;
+                            agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: lv };
+                            agg[q.id].t++;
+                            if (q.correct) agg[q.id].c++;
+                        });
+                    }
+                });
+                const keys = Object.keys(agg).sort(function(a, b) {
+                    const la = parseInt(a.slice(1, 2), 10);
+                    const lb = parseInt(b.slice(1, 2), 10);
+                    if (la !== lb) return lb - la;
+                    return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10);
+                });
+                if (!keys.length) { $('levelAcc').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无分层测评数据</p>'; return; }
+                let html = '';
+                keys.forEach(function(id) {
+                    const d = agg[id];
+                    const pct = pctOf(d.c, d.t);
+                    html += barRow('L' + d.level + ' · Q' + id.slice(4) + ' · ' + d.text, pct, pct + '%', barPctClass(pct));
+                });
+                $('levelAcc').innerHTML = html;
+            }
+
+            function renderDimAvg(records) {
+                const dimKeys = ['concept', 'relation', 'practice', 'analysis'];
+                let html = '';
+                dimKeys.forEach(function(dk) {
+                    const vals = [];
+                    records.forEach(function(r) {
+                        const ds = r.dimScores;
+                        if (ds && ds[dk] && ds[dk].total > 0) vals.push(pctOf(ds[dk].correct, ds[dk].total));
+                    });
+                    if (!vals.length) { html += barRow(DIM_NAMES[dk], 0, '—'); return; }
+                    const avg = Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+                    html += barRow(DIM_NAMES[dk] + '（' + vals.length + '人）', avg, avg + '%', barPctClass(avg));
+                });
+                $('dimAvg').innerHTML = html;
+            }
+
+            function renderWeak(records) {
+                const agg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        agg[q.id].t++;
+                        if (q.correct) agg[q.id].c++;
+                    });
+                });
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const list = Object.keys(agg).map(function(id) {
+                    const d = agg[id];
+                    return { id: id, pct: pctOf(d.c, d.t), c: d.c, t: d.t, text: d.text, order: orderIds.indexOf(id) };
+                }).filter(function(x) { return x.t > 0; }).sort(function(a, b) { return a.pct - b.pct || a.order - b.order; }).slice(0, 5);
+                if (!list.length) { $('weakQuestions').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无数据</p>'; return; }
+                $('weakQuestions').innerHTML = list.map(function(x) {
+                    return barRow('答对 ' + x.c + '/' + x.t + ' · ' + x.text, x.pct, x.pct + '%', 'low');
+                }).join('');
+            }
+
+            function renderClassHeat(records) {
+                const dimKeys = ['concept', 'relation', 'practice', 'analysis'];
+                const cell = {};
+                const lvTotal = { 5: { c: 0, t: 0 }, 4: { c: 0, t: 0 }, 3: { c: 0, t: 0 }, 2: { c: 0, t: 0 }, 1: { c: 0, t: 0 } };
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean' || q.level === undefined || !q.dim) return;
+                        const key = q.level + '-' + q.dim;
+                        cell[key] = cell[key] || { c: 0, t: 0 };
+                        cell[key].t++;
+                        if (q.correct) cell[key].c++;
+                        lvTotal[q.level].t++;
+                        if (q.correct) lvTotal[q.level].c++;
+                    });
+                });
+                let html = '<thead><tr><th>层级 / 维度</th>';
+                dimKeys.forEach(function(dk) { html += '<th>' + DIM_NAMES[dk] + '</th>'; });
+                html += '<th>层级总评</th></tr></thead><tbody>';
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    html += '<tr><th>' + LEVEL_NAMES[lv] + '</th>';
+                    dimKeys.forEach(function(dk) {
+                        const d = cell[lv + '-' + dk];
+                        const pct = d ? pctOf(d.c, d.t) : null;
+                        html += '<td style="' + (pct === null ? '' : 'background:rgba(14,165,233,' + (0.08 + pct / 100 * 0.6).toFixed(2) + ');font-weight:700;') + '">' + (pct === null ? '—' : pct + '%') + '</td>';
+                    });
+                    const lt = lvTotal[lv];
+                    const lpct = lt.t > 0 ? pctOf(lt.c, lt.t) : null;
+                    html += '<td style="' + (lpct === null ? '' : 'background:rgba(16,185,129,' + (0.08 + lpct / 100 * 0.6).toFixed(2) + ');font-weight:700;') + '">' + (lpct === null ? '—' : lpct + '%') + '</td>';
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+                $('classHeatTable').innerHTML = html;
+            }
+
+            function fmtTime(iso) {
+                if (!iso) return '—';
+                try {
+                    const d = new Date(iso);
+                    if (isNaN(d.getTime())) return '—';
+                    const p = function(n) { return (n < 10 ? '0' : '') + n; };
+                    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+                } catch (e) { return '—'; }
+            }
+
+            function renderStudentTable(records) {
+                const sorted = records.slice().sort(function(a, b) {
+                    const sa = a.compScore === null ? -1 : a.compScore;
+                    const sb = b.compScore === null ? -1 : b.compScore;
+                    return sb - sa || String(a.studentId).localeCompare(String(b.studentId));
+                });
+                let html = '<thead><tr><th>学号</th><th>姓名</th><th>提交时间</th><th>用时(分)</th><th>综合得分</th>';
+                for (const lv of [5, 4, 3, 2, 1]) html += '<th>' + LEVEL_NAMES[lv].replace('L' + lv + ' ', '') + '</th>';
+                html += '</tr></thead><tbody>';
+                sorted.forEach(function(r) {
+                    const levels = studentLevelPcts(r);
+                    const badge = function(v) {
+                        if (v === undefined) return '—';
+                        return '<span class="' + (v >= 80 ? 'badge-good' : v >= 60 ? 'badge-warn' : 'badge-bad') + '">' + v + '%</span>';
+                    };
+                    const dur = r.durationSec ? Math.round(r.durationSec / 60 * 10) / 10 : '—';
+                    html += '<tr><td>' + escapeHtml(r.studentId) + '</td><td>' + escapeHtml(r.name) + '</td>' +
+                        '<td>' + fmtTime(r.submittedAt) + '</td><td>' + dur + '</td>' +
+                        '<td>' + (r.compScore === null ? '—' : '<strong>' + r.compScore + '</strong> / ' + r.compTotal) + '</td>';
+                    for (const lv of [5, 4, 3, 2, 1]) html += '<td>' + badge(levels[lv]) + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+                $('studentTable').innerHTML = html;
+            }
+
+            function renderTeacherDashboard() {
+                const store = loadResults();
+                const records = Object.values(store);
+                const ep = $('submitEndpoint');
+                if (ep && !ep.value.trim()) ep.value = getSubmitEndpoint() || '';
+                const hasData = records.length > 0;
+                $('tEmpty').classList.toggle('hidden', hasData);
+                document.querySelectorAll('#teacherPanel .teacher-card').forEach(function(card) {
+                    card.classList.toggle('hidden', !hasData);
+                });
+                if (!hasData) return;
+                renderStats(records);
+                renderScoreDist(records);
+                renderLevelAvg(records);
+                renderCompAcc(records);
+                renderLevelAcc(records);
+                renderDimAvg(records);
+                renderWeak(records);
+                renderClassHeat(records);
+                renderStudentTable(records);
+            }
+
+            // ============================================================
+            //  教师端：CSV 导出
+            // ============================================================
+            function csvCell(v) {
+                const s = String(v == null ? '' : v);
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+
+            function exportStudentsCsv() {
+                const records = Object.values(loadResults());
+                if (!records.length) { toast('暂无数据可导出'); return; }
+                let rows = [['学号', '姓名', '提交时间', '用时(秒)', '综合得分', '综合总分', 'L5操作范式%', 'L4关键目的%', 'L3关键前提%', 'L2操作原则%', 'L1实施要点%', '概念理解%', '关系辨析%', '实践应用%', '综合分析%']];
+                records.forEach(function(r) {
+                    const lv = studentLevelPcts(r);
+                    const dims = { concept: '—', relation: '—', practice: '—', analysis: '—' };
+                    const ds = r.dimScores;
+                    if (ds) Object.keys(dims).forEach(function(dk) {
+                        if (ds[dk] && ds[dk].total > 0) dims[dk] = pctOf(ds[dk].correct, ds[dk].total);
+                    });
+                    rows.push([
+                        r.studentId, r.name, r.submittedAt, r.durationSec === null ? '' : r.durationSec,
+                        r.compScore === null ? '' : r.compScore, r.compTotal,
+                        lv[5] === undefined ? '' : lv[5], lv[4] === undefined ? '' : lv[4],
+                        lv[3] === undefined ? '' : lv[3], lv[2] === undefined ? '' : lv[2],
+                        lv[1] === undefined ? '' : lv[1],
+                        dims.concept, dims.relation, dims.practice, dims.analysis
+                    ]);
+                });
+                const csv = '\uFEFF' + rows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+                downloadFile('OBE全班学生明细_' + new Date().toISOString().slice(0, 10) + '.csv', csv, 'text/csv;charset=utf-8');
+                toast('学生明细 CSV 已导出 ✅ 可直接用 Excel 打开');
+            }
+
+            function exportQuestionsCsv() {
+                const records = Object.values(loadResults());
+                if (!records.length) { toast('暂无数据可导出'); return; }
+                const rows = [['来源', '题号', '题目', '层级', '维度', '答对人数', '答题人数', '正确率%']];
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const pushAgg = function(agg, source) {
+                    Object.keys(agg).sort(function(a, b) {
+                        const ia = orderIds.indexOf(a);
+                        const ib = orderIds.indexOf(b);
+                        if (source === '综合' && ia !== -1 && ib !== -1) return ia - ib;
+                        if (source === '综合' && ia === -1) return 1;
+                        if (source === '综合' && ib === -1) return -1;
+                        const la = parseInt(a.slice(1, 2), 10);
+                        const lb = parseInt(b.slice(1, 2), 10);
+                        if (la !== lb) return lb - la;
+                        return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10);
+                    }).forEach(function(id) {
+                        const d = agg[id];
+                        rows.push([source, id, d.text, 'L' + d.level, DIM_NAMES[d.dim] || '', d.c, d.t, pctOf(d.c, d.t)]);
+                    });
+                };
+                const compAgg = {};
+                const levelAgg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        compAgg[q.id] = compAgg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        compAgg[q.id].t++;
+                        if (q.correct) compAgg[q.id].c++;
+                    });
+                    const ld = r.levelDetail || {};
+                    for (const lv of [5, 4, 3, 2, 1]) {
+                        (ld[lv] || []).forEach(function(q) {
+                            if (!q || typeof q.correct !== 'boolean') return;
+                            levelAgg[q.id] = levelAgg[q.id] || { c: 0, t: 0, text: q.question || '', level: lv, dim: '' };
+                            levelAgg[q.id].t++;
+                            if (q.correct) levelAgg[q.id].c++;
+                        });
+                    }
+                });
+                pushAgg(compAgg, '综合测评');
+                pushAgg(levelAgg, '分层测评');
+                const csv = '\uFEFF' + rows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+                downloadFile('OBE每题正确率_' + new Date().toISOString().slice(0, 10) + '.csv', csv, 'text/csv;charset=utf-8');
+                toast('每题正确率 CSV 已导出 ✅ 可直接用 Excel 打开');
+            }
+
+            // ============================================================
+            //  角色切换与入口
+            // ============================================================
+            function unlockTeacher() {
+                const pwd = $('teacherPwd').value;
+                if (pwd === window.TEACHER_PASSWORD) {
+                    try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+                    $('teacherGate').classList.add('hidden');
+                    $('teacherPanel').classList.remove('hidden');
+                    renderTeacherDashboard();
+                    toast('已进入教师端 ✅');
+                } else {
+                    toast('密码错误，请重试');
+                }
+            }
+
+            function setRole(role) {
+                const isTeacher = role === 'teacher';
+                $('roleStudentBtn').classList.toggle('active', !isTeacher);
+                $('roleTeacherBtn').classList.toggle('active', isTeacher);
+                $('teacherSection').classList.toggle('hidden', !isTeacher);
+                const main = document.querySelector('.page-wrap main');
+                if (main) main.classList.toggle('hidden', isTeacher);
+                if (isTeacher) {
+                    let unlocked = false;
+                    try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) {}
+                    $('teacherGate').classList.toggle('hidden', unlocked);
+                    $('teacherPanel').classList.toggle('hidden', !unlocked);
+                    if (unlocked) renderTeacherDashboard();
+                } else {
+                    refreshSubmitCard();
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            $('roleStudentBtn').addEventListener('click', function() { setRole('student'); });
+            $('roleTeacherBtn').addEventListener('click', function() { setRole('teacher'); });
+
+            // ---- 初始化 ----
+            loadIdentity();
+            refreshSubmitCard();
+        })();
+    </script>
+</body>
+</html>
