@@ -1296,6 +1296,7 @@
                         <input type="text" id="submitEndpoint" placeholder="https://webhook.site/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
                         <button class="btn btn-primary" type="button" onclick="saveEndpoint()">保存</button>
                         <button class="btn btn-secondary" type="button" onclick="pullOnlineResults()">🔄 拉取在线结果</button>
+                        <button class="btn btn-secondary" type="button" onclick="openLiveView()">📋 实时查看提交</button>
                         <button class="btn btn-secondary" type="button" onclick="testEndpoint()">测试</button>
                     </div>
                     <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);margin-top:var(--sp-2);">
@@ -1700,6 +1701,13 @@
                 renderOnlineBox();
             }
 
+            function openLiveView() {
+                const endpoint = getSubmitEndpoint() || '';
+                const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
+                const url = m ? ('https://webhook.site/#!/view/' + m[1]) : 'https://webhook.site/#!/view/7468cfaa-b46d-4edf-ad74-f2b6dbdf1f49';
+                window.open(url, '_blank');
+            }
+
             function testEndpoint() {
                 const endpoint = getSubmitEndpoint();
                 if (!endpoint) { toast('请先填写并保存收集网址'); return; }
@@ -1762,7 +1770,7 @@
                         renderTeacherDashboard();
                         toast('拉取完成：新增/更新 ' + imported + ' 份结果');
                     }).catch(function() {
-                        toast('自动拉取被浏览器拦截，请复制此网址到浏览器打开后全选复制，粘贴到上方输入框导入：' + apiUrl);
+                        toast('在线同步服务尚未就绪。可点“📋 实时查看提交”看谁交了，或复制此网址到浏览器打开、全选复制后粘贴到上方输入框导入：' + apiUrl);
                     });
                 });
             }
@@ -2393,6 +2401,7 @@
 
             // ---- 暴露按钮函数（修复点击无反应）----
             window.saveIdentity = saveIdentity;
+            window.openLiveView = openLiveView;
             window.stickySubmit = stickySubmit;
             window.submitResultOnline = submitResultOnline;
             window.exportMyResult = exportMyResult;
