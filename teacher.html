@@ -1259,10 +1259,27 @@
                     <strong>📖 使用说明（三步收集全班结果）</strong>
                     <ol>
                         <li><strong>发布：</strong>把网页链接发给学生（微信 / 学习通 / QQ 均可），学生用浏览器打开即可做题。</li>
-                        <li><strong>在线回收（推荐）：</strong>在下方“在线收集设置”里填入你的收集网址并保存，学生提交综合测评后点击“在线提交我的结果”，结果直接发到你这里；老师在本页点“🔄 拉取在线结果”即可合并进统计。</li>
+                        <li><strong>在线回收（推荐）：</strong>收集网址已自动配置好，无需填写。学生提交综合测评后点击“在线提交我的结果”，结果直接发到你这里；本页面每 45 秒自动同步，也可随时点下方“🔄 拉取在线结果”立即合并进统计。</li><li><strong>实时查看：</strong>想实时看谁交了，可打开 <a href="https://webhook.site/#!/view/7468cfaa-b46d-4edf-ad74-f2b6dbdf1f49" target="_blank" rel="noopener">实时提交页面</a>（免注册，学生一提交立刻显示）。</li>
                         <li><strong>文件回收（备选）：</strong>学生也可以点“下载我的结果文件”或“复制我的结果文本”发回给你，然后点击“导入学生结果文件”（可一次多选），或把文本粘贴到下方输入框后点“导入”。</li>
                         <li><strong>统计：</strong>导入或拉取后，下方自动生成全班统计图；数据保存在本浏览器中，刷新不丢失，可随时用“💾 备份全部数据”保存。</li>
                     </ol>
+                </div>
+
+                <div class="teacher-card" id="onlineSettingsCard" style="margin-top:var(--sp-5);">
+                    <h3>🌐 在线收集设置（已自动配置）</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">
+                        学生端做题后会显示“在线提交”按钮，把结果直接发到下面的收集网址（无需收文件）。
+                        本页面每 45 秒自动同步一次，也可以随时手动点“🔄 拉取在线结果”。一般不需要改动这里的设置。
+                    </p>
+                    <div class="endpoint-row">
+                        <input type="text" id="submitEndpoint" placeholder="https://webhook.site/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
+                        <button class="btn btn-primary" type="button" onclick="saveEndpoint()">保存</button>
+                        <button class="btn btn-secondary" type="button" onclick="pullOnlineResults()">🔄 拉取在线结果</button>
+                        <button class="btn btn-secondary" type="button" onclick="testEndpoint()">测试</button>
+                    </div>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);margin-top:var(--sp-2);">
+                        提示：这是系统自动生成的专属收集网址，请勿修改；在线数据约保留 7 天，建议课后点“💾 备份全部数据”保存。
+                    </p>
                 </div>
 
                 <div class="teacher-toolbar">
@@ -1284,22 +1301,7 @@
                     </div>
                 </div>
 
-                <div class="teacher-card" style="margin-top:var(--sp-5);">
-                    <h3>🌐 在线收集设置</h3>
-                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">
-                        学生端会显示“在线提交”按钮，把结果直接发到这里填写的网址（无需收文件）。
-                        老师页面也会定期从该网址自动拉取新结果并合并进下方统计。
-                    </p>
-                    <div class="endpoint-row">
-                        <input type="text" id="submitEndpoint" placeholder="https://webhook.site/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
-                        <button class="btn btn-primary" type="button" onclick="saveEndpoint()">保存</button>
-                        <button class="btn btn-secondary" type="button" onclick="pullOnlineResults()">🔄 拉取在线结果</button>
-                        <button class="btn btn-secondary" type="button" onclick="testEndpoint()">测试</button>
-                    </div>
-                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);margin-top:var(--sp-2);">
-                        提示：打开 <a href="https://webhook.site" target="_blank" rel="noopener">webhook.site</a> 会免费生成一个专属网址，把那个网址粘贴到上面即可（免注册，收集数据约保留 7 天）。
-                    </p>
-                </div>
+
 
                 <div id="tStats" class="t-stat-grid" style="margin-top:var(--sp-5);"></div>
 
@@ -1688,29 +1690,64 @@
             function pullOnlineResults() {
                 const endpoint = getSubmitEndpoint();
                 if (!endpoint) { toast('请先填写并保存收集网址'); return; }
-                const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
-                if (!m) {
-                    toast('该网址暂不支持自动拉取，请把学生提交内容粘贴到上方输入框导入');
-                    return;
-                }
-                const apiUrl = 'https://webhook.site/token/' + m[1] + '/requests?per_page=200';
-                fetch(apiUrl, { headers: { 'Accept': 'application/json' } }).then(function(r) {
+                fetch('results.json', { cache: 'no-store' }).then(function(r) {
+                    if (!r.ok) throw new Error('no-sync-file');
                     return r.json();
                 }).then(function(data) {
-                    const items = (data && Array.isArray(data.data)) ? data.data : [];
-                    if (!items.length) { toast('暂未收到任何在线提交'); return; }
+                    const list = Array.isArray(data) ? data : (data && Array.isArray(data.students) ? data.students : []);
+                    const records = list.filter(function(x) { return x && x.type === 'student-result'; });
+                    if (!records.length) { toast('暂未收到学生提交（可能学生还没交，或同步尚未完成）'); return; }
                     const store = loadResults();
                     let imported = 0;
-                    items.forEach(function(it) {
-                        if (it && it.content && addResultPayload(String(it.content), store).ok) imported++;
+                    records.forEach(function(rec) {
+                        if (addResultPayload(JSON.stringify(rec), store).ok) imported++;
                     });
                     saveResults(store);
                     renderTeacherDashboard();
-                    toast('拉取完成：新增/更新 ' + imported + ' 份结果');
+                    toast('已同步 ' + imported + ' 份在线结果（共 ' + records.length + ' 份提交记录）');
                 }).catch(function() {
-                    toast('浏览器拦截了自动拉取（跨域限制），请复制下面网址的内容后粘贴到上方输入框导入：' + apiUrl);
+                    const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
+                    if (!m) { toast('同步文件尚未生成，请稍后重试'); return; }
+                    const apiUrl = 'https://webhook.site/token/' + m[1] + '/requests?per_page=200';
+                    fetch(apiUrl, { headers: { 'Accept': 'application/json' } }).then(function(r) {
+                        return r.json();
+                    }).then(function(data) {
+                        const items = (data && Array.isArray(data.data)) ? data.data : [];
+                        if (!items.length) { toast('暂未收到任何在线提交'); return; }
+                        const store = loadResults();
+                        let imported = 0;
+                        items.forEach(function(it) {
+                            if (it && it.content && addResultPayload(String(it.content), store).ok) imported++;
+                        });
+                        saveResults(store);
+                        renderTeacherDashboard();
+                        toast('拉取完成：新增/更新 ' + imported + ' 份结果');
+                    }).catch(function() {
+                        toast('自动拉取被浏览器拦截，请复制此网址到浏览器打开后全选复制，粘贴到上方输入框导入：' + apiUrl);
+                    });
                 });
             }
+
+            function autoSync() {
+                fetch('results.json', { cache: 'no-store' }).then(function(r) {
+                    if (!r.ok) throw new Error('no-sync-file');
+                    return r.json();
+                }).then(function(data) {
+                    const list = Array.isArray(data) ? data : (data && Array.isArray(data.students) ? data.students : []);
+                    const records = list.filter(function(x) { return x && x.type === 'student-result'; });
+                    if (!records.length) return;
+                    const store = loadResults();
+                    let imported = 0;
+                    records.forEach(function(rec) {
+                        if (addResultPayload(JSON.stringify(rec), store).ok) imported++;
+                    });
+                    if (imported > 0) {
+                        saveResults(store);
+                        renderTeacherDashboard();
+                    }
+                }).catch(function() {});
+            }
+
 
             function refreshSubmitCard() {
                 const card = $('submitResultCard');
@@ -2140,7 +2177,7 @@
                 if (ep && !ep.value.trim()) ep.value = getSubmitEndpoint() || '';
                 const hasData = records.length > 0;
                 $('tEmpty').classList.toggle('hidden', hasData);
-                document.querySelectorAll('#teacherPanel .teacher-card').forEach(function(card) {
+                document.querySelectorAll('#teacherPanel .teacher-card:not(#onlineSettingsCard)').forEach(function(card) {
                     card.classList.toggle('hidden', !hasData);
                 });
                 if (!hasData) return;
@@ -2277,6 +2314,8 @@
             const ep0 = $('submitEndpoint');
             if (ep0 && !ep0.value.trim()) ep0.value = getSubmitEndpoint() || '';
             renderTeacherDashboard();
+            setInterval(autoSync, 45000);
+            autoSync();
         })();
     
     </script>
