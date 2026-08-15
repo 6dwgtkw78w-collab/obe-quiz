@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBE 教师端 · 全班统计</title>
+<style>
+        /* ===== 全局样式（与之前保持一致，略作精简） ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --color-canvas: #f5f7f9;
+            --color-surface: #ffffff;
+            --color-surface-alt: #f0f4f7;
+            --color-ink: #1a2332;
+            --color-ink-soft: #4a5568;
+            --color-ink-muted: #718096;
+            --color-border: #e2e8f0;
+            --color-border-soft: #edf2f7;
+            --color-accent: #0ea5e9;
+            --color-accent-ink: #ffffff;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --fs-xs: 0.75rem;
+            --fs-sm: 0.875rem;
+            --fs-base: 1rem;
+            --fs-lg: 1.125rem;
+            --fs-xl: 1.25rem;
+            --fs-2xl: 1.5rem;
+            --fs-3xl: 1.875rem;
+            --fs-4xl: 2.25rem;
+            --sp-1: 0.25rem;
+            --sp-2: 0.5rem;
+            --sp-3: 0.75rem;
+            --sp-4: 1rem;
+            --sp-5: 1.25rem;
+            --sp-6: 1.5rem;
+            --sp-8: 2rem;
+            --sp-10: 2.5rem;
+            --sp-12: 3rem;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --content-max: 1200px;
+            --reading-max: 720px;
+        }
+        body {
+            font-family: var(--font-sans);
+            font-size: var(--fs-base);
+            color: var(--color-ink);
+            background: var(--color-canvas);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1,
+        h2,
+        h3,
+        h4 {
+            margin: 0;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+        a {
+            color: var(--color-accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .page-wrap {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--sp-8) clamp(1rem, 3vw, 2rem);
+        }
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(245, 247, 249, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--color-border-soft);
+        }
+        .top-nav-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--sp-3) clamp(1rem, 3vw, 2rem);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--sp-4);
+            flex-wrap: wrap;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+            font-weight: 700;
+            font-size: var(--fs-lg);
+            color: var(--color-ink);
+        }
+        .nav-brand-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-accent), #06b6d4);
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: var(--fs-sm);
+            font-weight: 800;
+        }
+        .nav-links {
+            display: flex;
+            gap: var(--sp-2);
+            flex-wrap: wrap;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .nav-links a {
+            display: inline-block;
+            padding: var(--sp-2) var(--sp-3);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+            border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-links a:hover {
+            background: var(--color-surface);
+            color: var(--color-ink);
+            text-decoration: none;
+        }
+        .hero {
+            padding: var(--sp-12) 0 var(--sp-10);
+            text-align: left;
+        }
+        .hero-tag {
+            display: inline-block;
+            padding: var(--sp-1) var(--sp-3);
+            background: #e0f2fe;
+            color: #075985;
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            border-radius: 999px;
+            margin-bottom: var(--sp-4);
+        }
+        .hero h1 {
+            font-size: clamp(1.75rem, 4vw, var(--fs-4xl));
+            line-height: 1.15;
+            margin-bottom: var(--sp-4);
+            max-width: 720px;
+        }
+        .hero-desc {
+            font-size: var(--fs-lg);
+            color: var(--color-ink-soft);
+            line-height: 1.75;
+            max-width: 640px;
+            margin-bottom: var(--sp-6);
+        }
+        .hero-meta {
+            display: flex;
+            gap: var(--sp-6);
+            flex-wrap: wrap;
+            padding-top: var(--sp-5);
+            border-top: 1px solid var(--color-border);
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-1);
+        }
+        .meta-label {
+            font-size: var(--fs-xs);
+            color: var(--color-ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .meta-value {
+            font-size: var(--fs-lg);
+            font-weight: 700;
+            color: var(--color-ink);
+        }
+
+        .section {
+            padding: var(--sp-12) 0;
+            border-top: 1px solid var(--color-border-soft);
+        }
+        .section-header {
+            margin-bottom: var(--sp-8);
+        }
+        .section-eyebrow {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--sp-2);
+        }
+        .section h2 {
+            font-size: clamp(1.375rem, 3vw, var(--fs-2xl));
+            margin-bottom: var(--sp-3);
+        }
+        .section-desc {
+            color: var(--color-ink-soft);
+            max-width: var(--reading-max);
+            line-height: 1.75;
+        }
+
+        .pyramid-section {
+            background: linear-gradient(180deg, var(--color-canvas) 0%, var(--color-surface) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-10) var(--sp-8);
+            margin-bottom: var(--sp-10);
+            position: relative;
+            overflow: hidden;
+        }
+        .pyramid-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pyramid-container {
+            max-width: 720px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .pyramid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: var(--sp-8);
+        }
+        .pyramid-layer {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            border-radius: 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            padding: 0 var(--sp-3);
+        }
+        .pyramid-layer:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            z-index: 2;
+        }
+        .pyramid-layer[data-level="5"] {
+            width: 120px;
+            height: 56px;
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .pyramid-layer[data-level="4"] {
+            width: 240px;
+            height: 56px;
+            background: #dcfce7;
+            color: #166534;
+        }
+        .pyramid-layer[data-level="3"] {
+            width: 360px;
+            height: 56px;
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .pyramid-layer[data-level="2"] {
+            width: 480px;
+            height: 56px;
+            background: #cffafe;
+            color: #155e75;
+        }
+        .pyramid-layer[data-level="1"] {
+            width: 600px;
+            height: 56px;
+            background: #e0f2fe;
+            color: #075985;
+        }
+        .pyramid-layer-label {
+            font-weight: 700;
+            font-size: var(--fs-sm);
+            text-align: center;
+            padding: 0 var(--sp-2);
+        }
+        .pyramid-layer-label .layer-num {
+            font-size: var(--fs-xs);
+            opacity: 0.7;
+            display: block;
+            margin-bottom: 2px;
+        }
+        @media (max-width: 680px) {
+            .pyramid-layer[data-level="5"] {
+                width: 70px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="4"] {
+                width: 140px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="3"] {
+                width: 210px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="2"] {
+                width: 280px;
+                height: 44px;
+            }
+            .pyramid-layer[data-level="1"] {
+                width: 350px;
+                height: 44px;
+            }
+            .pyramid-layer-label {
+                font-size: var(--fs-xs);
+                padding: 0 var(--sp-1);
+            }
+        }
+
+        #kg-container {
+            width: 100%;
+            height: 620px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-4);
+            position: relative;
+        }
+        @media (max-width: 640px) {
+            #kg-container {
+                height: 460px;
+            }
+        }
+
+        /* 模态框（仅展示概念） */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            max-width: 680px;
+            width: 94%;
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 28px 32px;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFade 0.3s ease;
+        }
+        @keyframes modalFade {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #f0f2f5;
+            border: none;
+            font-size: 28px;
+            line-height: 1;
+            padding: 0 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #555;
+            transition: 0.2s;
+            margin-top: -8px;
+            margin-right: -8px;
+            z-index: 10;
+        }
+        .modal-close:hover {
+            background: #e0e4e8;
+            color: #000;
+        }
+        .modal-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e2a3a;
+            margin: 4px 0 16px 0;
+            border-bottom: 2px solid #e8ecf1;
+            padding-bottom: 12px;
+        }
+        .modal-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #f8faff;
+            padding: 18px 22px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 8px;
+        }
+        .modal-level-tag {
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .modal-level-tag.l5 {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .modal-level-tag.l4 {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .modal-level-tag.l3 {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .modal-level-tag.l2 {
+            background: #cffafe;
+            color: #155e75;
+        }
+        .modal-level-tag.l1 {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        /* 测评样式 */
+        .quiz-section {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-6);
+            margin-bottom: var(--sp-6);
+        }
+        .quiz-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--sp-5);
+            padding-bottom: var(--sp-4);
+            border-bottom: 1px solid var(--color-border-soft);
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+        }
+        .quiz-level-info {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .quiz-level-name {
+            font-size: var(--fs-xl);
+            font-weight: 700;
+        }
+        .quiz-level-sub {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+            margin-top: 2px;
+        }
+        .quiz-progress {
+            text-align: right;
+        }
+        .quiz-score {
+            font-size: var(--fs-2xl);
+            font-weight: 800;
+            color: var(--color-accent);
+        }
+        .quiz-score-label {
+            font-size: var(--fs-xs);
+            color: var(--color-ink-muted);
+        }
+        .quiz-item {
+            padding: var(--sp-4) 0;
+            border-bottom: 1px solid var(--color-border-soft);
+        }
+        .quiz-item:last-child {
+            border-bottom: none;
+        }
+        .quiz-question {
+            font-weight: 600;
+            margin-bottom: var(--sp-3);
+            display: flex;
+            gap: var(--sp-3);
+        }
+        .quiz-qnum {
+            color: var(--color-accent);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .quiz-options {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 var(--sp-3);
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+        }
+        .quiz-option {
+            padding: var(--sp-3) var(--sp-4);
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: var(--fs-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .quiz-option:hover {
+            border-color: var(--color-accent);
+            background: #e0f2fe;
+        }
+        .quiz-option.selected {
+            border-color: var(--color-accent);
+            background: #e0f2fe;
+            font-weight: 600;
+        }
+        .quiz-option.correct {
+            border-color: var(--color-success);
+            background: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .quiz-option.incorrect {
+            border-color: var(--color-danger);
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .quiz-option-letter {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            display: grid;
+            place-items: center;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .quiz-feedback {
+            display: none;
+            padding: var(--sp-3) var(--sp-4);
+            border-radius: 6px;
+            font-size: var(--fs-sm);
+            line-height: 1.75;
+        }
+        .quiz-feedback.show {
+            display: block;
+        }
+        .quiz-feedback.correct {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 3px solid var(--color-success);
+        }
+        .quiz-feedback.incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 3px solid var(--color-danger);
+        }
+        .quiz-actions {
+            display: flex;
+            gap: var(--sp-3);
+            margin-top: var(--sp-4);
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: var(--sp-2) var(--sp-5);
+            border-radius: 6px;
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--color-accent);
+            color: var(--color-accent-ink);
+        }
+        .btn-primary:hover {
+            background: #0284c7;
+        }
+        .btn-secondary {
+            background: var(--color-surface);
+            color: var(--color-ink-soft);
+            border-color: var(--color-border);
+        }
+        .btn-secondary:hover {
+            background: var(--color-surface-alt);
+            color: var(--color-ink);
+        }
+
+        .comprehensive-quiz {
+            background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-8);
+            border: 1px solid #bae6fd;
+        }
+        .comprehensive-header {
+            text-align: center;
+            margin-bottom: var(--sp-6);
+        }
+        .comprehensive-header h3 {
+            font-size: var(--fs-xl);
+            margin-bottom: var(--sp-2);
+        }
+        .comprehensive-header p {
+            color: var(--color-ink-soft);
+            font-size: var(--fs-sm);
+        }
+
+        /* 可视化 */
+        .viz-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-6);
+        }
+        @media (max-width: 860px) {
+            .viz-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        .viz-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            padding: var(--sp-6);
+        }
+        .viz-card-header {
+            margin-bottom: var(--sp-5);
+        }
+        .viz-card-header h3 {
+            font-size: var(--fs-lg);
+            margin-bottom: var(--sp-1);
+        }
+        .viz-card-header p {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .viz-card-full {
+            grid-column: 1 / -1;
+        }
+
+        .radar-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--sp-2) 0;
+            width: 100%;
+        }
+        #radarCanvas {
+            max-width: 100%;
+            height: auto;
+            background: transparent;
+        }
+
+        .mastery-bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+        .mastery-bar-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 50px;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+        .mastery-bar-label {
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            color: var(--color-ink-soft);
+        }
+        .mastery-bar-track {
+            height: 20px;
+            background: var(--color-surface-alt);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        .mastery-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1s ease;
+            position: relative;
+        }
+        .mastery-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+        }
+        .mastery-bar-value {
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .fill-5 {
+            background: #854d0e;
+        }
+        .fill-4 {
+            background: #166534;
+        }
+        .fill-3 {
+            background: #115e59;
+        }
+        .fill-2 {
+            background: #155e75;
+        }
+        .fill-1 {
+            background: #075985;
+        }
+
+        .heat-high {
+            background: #bbf7d0;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .heat-med {
+            background: #fef9c3;
+            color: #854d0e;
+            font-weight: 600;
+        }
+        .heat-low {
+            background: #fecaca;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .heat-none {
+            background: #f3f4f6;
+            color: #9ca3af;
+        }
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+        }
+        .heatmap-table th,
+        .heatmap-table td {
+            padding: var(--sp-3);
+            text-align: center;
+            border: 1px solid var(--color-border-soft);
+        }
+        .heatmap-table th {
+            background: var(--color-surface-alt);
+            font-weight: 700;
+            font-size: var(--fs-xs);
+            color: var(--color-ink-soft);
+        }
+        .heatmap-table th:first-child {
+            text-align: left;
+            width: 120px;
+        }
+        .heatmap-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            background: var(--color-surface-alt);
+        }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--sp-4);
+            margin-top: var(--sp-5);
+        }
+        .insight-card {
+            padding: var(--sp-4);
+            border-radius: 6px;
+            border-left: 3px solid;
+            background: var(--color-surface-alt);
+        }
+        .insight-card.strength {
+            border-color: var(--color-success);
+        }
+        .insight-card.gap {
+            border-color: var(--color-warning);
+        }
+        .insight-card.action {
+            border-color: var(--color-accent);
+        }
+        .insight-title {
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            margin-bottom: var(--sp-2);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+        .insight-desc {
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+            line-height: 1.75;
+        }
+
+        .footer {
+            padding: var(--sp-8) 0 var(--sp-6);
+            border-top: 1px solid var(--color-border-soft);
+            text-align: center;
+            color: var(--color-ink-muted);
+            font-size: var(--fs-sm);
+        }
+        .footer a {
+            color: var(--color-accent);
+        }
+
+        @media (max-width: 640px) {
+            .quiz-section {
+                padding: var(--sp-4);
+            }
+            .comprehensive-quiz {
+                padding: var(--sp-5);
+            }
+            .viz-card {
+                padding: var(--sp-4);
+            }
+            .mastery-bar-row {
+                grid-template-columns: 60px 1fr 40px;
+                gap: var(--sp-2);
+            }
+            .mastery-bar-label {
+                font-size: var(--fs-xs);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        .kg-level-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .kg-level-badge.l5 {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .kg-level-badge.l4 {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .kg-level-badge.l3 {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+        .kg-level-badge.l2 {
+            background: #cffafe;
+            color: #155e75;
+        }
+        .kg-fallback {
+            padding: var(--sp-4);
+            text-align: center;
+            color: var(--color-ink-muted);
+            font-size: var(--fs-sm);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-md);
+        }
+        .kg-level-badge.l1 {
+            background: #e0f2fe;
+            color: #075985;
+        }
+    </style>
+<style>
+        .role-switch {
+            display: flex;
+            gap: var(--sp-2);
+            margin-left: auto;
+        }
+        .role-btn {
+            padding: var(--sp-2) var(--sp-4);
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            background: var(--color-surface);
+            color: var(--color-ink-soft);
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .role-btn:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+        .role-btn.active {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: var(--color-accent-ink);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .identity-card,
+        .submit-card,
+        .teacher-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--sp-6);
+        }
+        .identity-card h3,
+        .submit-card h3,
+        .teacher-card h3 {
+            margin-bottom: var(--sp-2);
+        }
+        .identity-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-4);
+            align-items: flex-end;
+            margin-top: var(--sp-4);
+        }
+        .identity-fields label {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-1);
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            color: var(--color-ink-soft);
+        }
+        .identity-fields input {
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: var(--fs-base);
+            min-width: 200px;
+        }
+        .identity-fields input:focus {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+        .identity-note {
+            margin-top: var(--sp-3);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .submit-card {
+            border: 1px dashed var(--color-accent);
+            margin-top: var(--sp-6);
+            text-align: center;
+        }
+        .submit-card .who {
+            color: var(--color-accent);
+            font-weight: 800;
+        }
+        .submit-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            justify-content: center;
+            margin-top: var(--sp-4);
+        }
+        .teacher-section {
+            margin-top: var(--sp-8);
+        }
+        .teacher-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            align-items: center;
+            margin-bottom: var(--sp-4);
+        }
+        .teacher-toolbar .btn {
+            font-size: var(--fs-sm);
+            padding: var(--sp-2) var(--sp-4);
+        }
+        .online-submit-note {
+            margin-top: var(--sp-3);
+            padding: var(--sp-3) var(--sp-4);
+            border-radius: var(--radius-md);
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            font-size: var(--fs-sm);
+            color: var(--color-ink-soft);
+        }
+        .online-submit-note.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .online-submit-note.success {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        .online-submit-note .btn {
+            margin-top: var(--sp-2);
+        }
+        .endpoint-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-2);
+            align-items: center;
+            margin-top: var(--sp-2);
+        }
+        .endpoint-row input {
+            flex: 1;
+            min-width: 260px;
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: var(--fs-sm);
+        }
+        .import-paste {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+            margin-top: var(--sp-4);
+        }
+        .import-paste textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: var(--fs-sm);
+            resize: vertical;
+        }
+        .t-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--sp-4);
+            margin-bottom: var(--sp-6);
+        }
+        .t-stat-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--sp-5);
+            text-align: center;
+        }
+        .t-stat-card .num {
+            font-size: var(--fs-3xl);
+            font-weight: 800;
+            color: var(--color-accent);
+            line-height: 1.1;
+        }
+        .t-stat-card .label {
+            margin-top: var(--sp-1);
+            font-size: var(--fs-sm);
+            color: var(--color-ink-muted);
+        }
+        .t-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: var(--sp-5);
+            margin-bottom: var(--sp-5);
+        }
+        .t-bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-3);
+            margin-top: var(--sp-4);
+        }
+        .t-bar-row {
+            display: grid;
+            grid-template-columns: 130px 1fr 52px;
+            align-items: center;
+            gap: var(--sp-3);
+            font-size: var(--fs-sm);
+        }
+        .t-bar-label {
+            color: var(--color-ink-soft);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .t-bar-track {
+            background: var(--color-surface-alt);
+            border-radius: 999px;
+            height: 18px;
+            overflow: hidden;
+        }
+        .t-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+            width: 0;
+            transition: width 0.6s ease;
+        }
+        .t-bar-fill.low {
+            background: linear-gradient(90deg, #fca5a5, #ef4444);
+        }
+        .t-bar-fill.mid {
+            background: linear-gradient(90deg, #fcd34d, #f59e0b);
+        }
+        .t-bar-val {
+            font-weight: 800;
+            text-align: right;
+            color: var(--color-ink);
+        }
+        .t-table-wrap {
+            overflow-x: auto;
+            margin-top: var(--sp-4);
+        }
+        .t-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+            min-width: 720px;
+        }
+        .t-table th,
+        .t-table td {
+            padding: var(--sp-2) var(--sp-3);
+            border-bottom: 1px solid var(--color-border-soft);
+            text-align: left;
+            white-space: nowrap;
+        }
+        .t-table th {
+            background: var(--color-surface-alt);
+            font-weight: 700;
+            color: var(--color-ink-soft);
+            position: sticky;
+            top: 0;
+        }
+        .t-table tr:hover td {
+            background: #f8fafc;
+        }
+        .badge-good {
+            color: #059669;
+            font-weight: 700;
+        }
+        .badge-warn {
+            color: #d97706;
+            font-weight: 700;
+        }
+        .badge-bad {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .t-help {
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+            margin-bottom: var(--sp-5);
+            font-size: var(--fs-sm);
+            line-height: 1.7;
+        }
+        .t-help ol {
+            padding-left: 1.4rem;
+            margin-top: var(--sp-2);
+        }
+        .t-help li {
+            margin-bottom: var(--sp-1);
+        }
+        .t-empty {
+            padding: var(--sp-8);
+            text-align: center;
+            color: var(--color-ink-muted);
+            background: var(--color-surface);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-lg);
+        }
+        .password-gate {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-3);
+            align-items: center;
+            margin-top: var(--sp-4);
+        }
+        .password-gate input {
+            padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: var(--fs-base);
+            min-width: 220px;
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            transform: translateX(-50%);
+            background: #1a2332;
+            color: #fff;
+            padding: var(--sp-3) var(--sp-5);
+            border-radius: 999px;
+            font-size: var(--fs-sm);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .btn-danger {
+            background: var(--color-danger);
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav" role="navigation" aria-label="页面导航">
+        <div class="top-nav-inner">
+            <div class="nav-brand">
+                <span class="nav-brand-badge">OBE</span>
+                <span>教师端 · 全班统计</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#teacherSection">统计总览</a></li>
+                <li><a href="https://6dwgtkw78w-collab.github.io/obe-quiz/" target="_blank" rel="noopener">打开学生版 ↗</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+<section class="section teacher-section" id="teacherSection">
+            <div class="section-header">
+                <div class="section-eyebrow">06 · Class Analytics</div>
+                <h2>👨‍🏫 全班做题统计与可视化</h2>
+                <p class="section-desc">导入学生提交的结果，自动生成全班分数分布、各层掌握度、每题正确率等统计图表，并可导出 Excel 数据。</p>
+            </div>
+
+            <div class="teacher-card" id="teacherGate">
+                <h3>🔒 教师端入口</h3>
+                <p style="color:var(--color-ink-muted);margin-top:var(--sp-2);font-size:var(--fs-sm);">
+                    请输入教师密码（默认密码：<strong>hblg2026</strong>，可在页面代码开头的 <code>TEACHER_PASSWORD</code> 处修改）。
+                </p>
+                <div class="password-gate">
+                    <input type="password" id="teacherPwd" placeholder="请输入教师密码" onkeydown="if(event.key==='Enter')unlockTeacher()">
+                    <button class="btn btn-primary" type="button" onclick="unlockTeacher()">进入教师端</button>
+                </div>
+            </div>
+
+            <div id="teacherPanel" class="hidden">
+                <div class="t-help">
+                    <strong>📖 使用说明（三步收集全班结果）</strong>
+                    <ol>
+                        <li><strong>发布：</strong>把网页链接发给学生（微信 / 学习通 / QQ 均可），学生用浏览器打开即可做题。</li>
+                        <li><strong>在线回收（推荐）：</strong>在下方“在线收集设置”里填入你的收集网址并保存，学生提交综合测评后点击“在线提交我的结果”，结果直接发到你这里；老师在本页点“🔄 拉取在线结果”即可合并进统计。</li>
+                        <li><strong>文件回收（备选）：</strong>学生也可以点“下载我的结果文件”或“复制我的结果文本”发回给你，然后点击“导入学生结果文件”（可一次多选），或把文本粘贴到下方输入框后点“导入”。</li>
+                        <li><strong>统计：</strong>导入或拉取后，下方自动生成全班统计图；数据保存在本浏览器中，刷新不丢失，可随时用“💾 备份全部数据”保存。</li>
+                    </ol>
+                </div>
+
+                <div class="teacher-toolbar">
+                    <label class="btn btn-primary" style="cursor:pointer;">
+                        📂 导入学生结果文件（可多选）
+                        <input type="file" id="resultFiles" accept=".json,application/json" multiple style="display:none;" onchange="importResultFiles(event)">
+                    </label>
+                    <button class="btn btn-secondary" type="button" onclick="exportAllJson()">💾 备份全部数据</button>
+                    <button class="btn btn-secondary" type="button" onclick="exportStudentsCsv()">📊 导出学生明细 CSV</button>
+                    <button class="btn btn-secondary" type="button" onclick="exportQuestionsCsv()">📈 导出每题正确率 CSV</button>
+                    <button class="btn btn-danger" type="button" onclick="clearAllResults()">🗑️ 清空全部数据</button>
+                </div>
+
+                <div class="import-paste">
+                    <label style="font-size:var(--fs-sm);font-weight:700;color:var(--color-ink-soft);">📋 粘贴学生发来的结果文本（可一次粘贴多份，每份单独一行）</label>
+                    <textarea id="pasteResults" placeholder="在这里粘贴学生复制的结果文本…"></textarea>
+                    <div>
+                        <button class="btn btn-primary" type="button" onclick="importPastedResults()">导入粘贴的结果</button>
+                    </div>
+                </div>
+
+                <div class="teacher-card" style="margin-top:var(--sp-5);">
+                    <h3>🌐 在线收集设置</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">
+                        学生端会显示“在线提交”按钮，把结果直接发到这里填写的网址（无需收文件）。
+                        老师页面也会定期从该网址自动拉取新结果并合并进下方统计。
+                    </p>
+                    <div class="endpoint-row">
+                        <input type="text" id="submitEndpoint" placeholder="https://webhook.site/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
+                        <button class="btn btn-primary" type="button" onclick="saveEndpoint()">保存</button>
+                        <button class="btn btn-secondary" type="button" onclick="pullOnlineResults()">🔄 拉取在线结果</button>
+                        <button class="btn btn-secondary" type="button" onclick="testEndpoint()">测试</button>
+                    </div>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);margin-top:var(--sp-2);">
+                        提示：打开 <a href="https://webhook.site" target="_blank" rel="noopener">webhook.site</a> 会免费生成一个专属网址，把那个网址粘贴到上面即可（免注册，收集数据约保留 7 天）。
+                    </p>
+                </div>
+
+                <div id="tStats" class="t-stat-grid" style="margin-top:var(--sp-5);"></div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>📊 综合测评分数分布</h3>
+                        <div class="t-bars" id="scoreDist"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>🏔️ 各层级平均掌握度</h3>
+                        <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">基于学生已完成的测评数据</p>
+                        <div class="t-bars" id="levelAvg"></div>
+                    </div>
+                </div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>🎯 综合测评每题正确率</h3>
+                        <div class="t-bars" id="compAcc"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>🧩 分层测评每题正确率</h3>
+                        <div class="t-bars" id="levelAcc"></div>
+                    </div>
+                </div>
+
+                <div class="t-grid-2">
+                    <div class="teacher-card">
+                        <h3>🔄 能力维度平均正确率</h3>
+                        <div class="t-bars" id="dimAvg"></div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3>⚠️ 薄弱题目 Top 5</h3>
+                        <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">错误率最高的题目，建议在课堂重点讲解</p>
+                        <div class="t-bars" id="weakQuestions"></div>
+                    </div>
+                </div>
+
+                <div class="teacher-card" style="margin-bottom:var(--sp-5);">
+                    <h3>🔥 层级 × 维度 正确率热力图</h3>
+                    <div class="t-table-wrap">
+                        <table class="t-table" id="classHeatTable"></table>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <h3>👥 学生成绩明细表</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-ink-muted);">按综合测评总分从高到低排列；表格可横向滚动查看更多列</p>
+                    <div class="t-table-wrap">
+                        <table class="t-table" id="studentTable"></table>
+                    </div>
+                </div>
+
+                <div class="t-empty hidden" id="tEmpty">暂无学生结果。请先导入学生提交的结果文件或文本。</div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>OBE 金字塔知识智能体 · 教师端统计 · 数据保存在你的浏览器中</p>
+        </footer>
+    </div>
+
+    <script>
+
+        // ============================================================
+        //  9. 学生结果提交 + 教师端统计（新增）
+        // ============================================================
+        (function() {
+            'use strict';
+
+            // ---- 教师密码：老师可自行修改这里的数字 ----
+            window.TEACHER_PASSWORD = 'hblg2026';
+            // ---- 在线收集网址（部署时老师填好，学生端自动使用；也可用网址参数 ?submit=xxx 覆盖）----
+            window.SUBMIT_ENDPOINT = 'https://webhook.site/7468cfaa-b46d-4edf-ad74-f2b6dbdf1f49';
+
+            const IDENTITY_KEY = 'obe_identity_v1';
+            const RESULTS_KEY = 'obe_teacher_results_v1';
+            const UNLOCK_KEY = 'obe_teacher_unlocked';
+            const ENDPOINT_KEY = 'obe_submit_endpoint_v1';
+            const SUBMITTED_KEY = 'obe_online_submitted_v1';
+            const compQuestions = ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10'].map(function(id){ return {id:id}; });
+            const LEVEL_NAMES = { 5: 'L5 操作范式', 4: 'L4 关键目的', 3: 'L3 关键前提', 2: 'L2 操作原则', 1: 'L1 实施要点' };
+            const DIM_NAMES = { concept: '概念理解', relation: '关系辨析', practice: '实践应用', analysis: '综合分析' };
+
+            window._pageStartTime = window._pageStartTime || Date.now();
+
+            function $(id) { return document.getElementById(id); }
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            // ---- 轻提示 ----
+            let toastTimer = null;
+            function toast(msg) {
+                let el = $('globalToast');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'globalToast';
+                    el.className = 'toast';
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3200);
+            }
+
+            function downloadFile(filename, content, mime) {
+                const blob = new Blob([content], { type: mime || 'application/octet-stream;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 800);
+            }
+
+            // ============================================================
+            //  学生身份
+            // ============================================================
+            function saveIdentity() {
+                const name = $('studentName').value.trim();
+                const sid = $('studentId').value.trim();
+                if (!name || !sid) { toast('请先填写姓名和学号'); return; }
+                const identity = { name: name, studentId: sid, savedAt: new Date().toISOString() };
+                try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch (e) {}
+                toast('信息已保存 ✅');
+            }
+
+            function loadIdentity() {
+                try {
+                    const raw = localStorage.getItem(IDENTITY_KEY);
+                    if (raw) {
+                        const id = JSON.parse(raw);
+                        if (id) {
+                            $('studentName').value = id.name || '';
+                            $('studentId').value = id.studentId || '';
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            function currentIdentity() {
+                const name = $('studentName').value.trim();
+                const sid = $('studentId').value.trim();
+                if (name && sid) return { name: name, studentId: sid };
+                try {
+                    const raw = localStorage.getItem(IDENTITY_KEY);
+                    if (raw) {
+                        const id = JSON.parse(raw);
+                        if (id && id.name && id.studentId) return { name: id.name, studentId: id.studentId };
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            // ============================================================
+            //  学生：生成 / 导出 / 复制结果
+            // ============================================================
+            function buildResultPayload() {
+                const identity = currentIdentity();
+                if (!identity) { toast('请先在上方填写并保存姓名、学号'); return null; }
+
+                const comp = window._compScores || null;
+                const detail = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) {
+                    const userAns = compAnswers[q.id];
+                    return {
+                        id: q.id,
+                        level: q.level,
+                        dim: q.dim,
+                        question: q.q,
+                        userAnswer: userAns === undefined ? null : userAns,
+                        correct: userAns === q.ans
+                    };
+                });
+
+                const levelDetail = {};
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    const qs = (typeof levelQuizData !== 'undefined' ? levelQuizData : {})[lv] || [];
+                    const ansMap = (window._levelAnswers || {})[lv] || {};
+                    levelDetail[lv] = qs.map(function(q, idx) {
+                        const userAns = ansMap[idx];
+                        return {
+                            id: 'L' + lv + '-Q' + (idx + 1),
+                            level: lv,
+                            question: q.q,
+                            userAnswer: userAns === undefined ? null : userAns,
+                            correct: userAns === q.ans
+                        };
+                    });
+                }
+
+                const payload = {
+                    app: 'OBE金字塔学习智能体',
+                    version: 2,
+                    type: 'student-result',
+                    name: identity.name,
+                    studentId: identity.studentId,
+                    submittedAt: new Date().toISOString(),
+                    durationSec: Math.round((Date.now() - window._pageStartTime) / 1000),
+                    compScore: comp ? comp.total : null,
+                    compTotal: (typeof compQuestions !== 'undefined' ? compQuestions : []).length,
+                    compLevelScores: comp ? comp.levelScores : null,
+                    dimScores: comp ? comp.dimScores : null,
+                    levelScores: window._levelScores || {},
+                    answers: {
+                        level: window._levelAnswers || {},
+                        comp: compAnswers || {}
+                    },
+                    detail: detail,
+                    levelDetail: levelDetail
+                };
+                return payload;
+            }
+
+            function exportMyResult() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                downloadFile('OBE结果_' + payload.name + '_' + payload.studentId + '.json', JSON.stringify(payload), 'application/json;charset=utf-8');
+                toast('结果文件已下载 ✅ 请把文件发给老师');
+            }
+
+            function fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                let ok = false;
+                try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                ta.remove();
+                return ok;
+            }
+
+            function copyMyResult() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                const text = JSON.stringify(payload);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(
+                        function() { toast('结果文本已复制 ✅ 请粘贴发给老师'); },
+                        function() { toast(fallbackCopy(text) ? '结果文本已复制 ✅ 请粘贴发给老师' : '复制失败，请改用“下载结果文件”'); }
+                    );
+                } else {
+                    toast(fallbackCopy(text) ? '结果文本已复制 ✅ 请粘贴发给老师' : '复制失败，请改用“下载结果文件”');
+                }
+            }
+
+            // ============================================================
+            //  在线收集（学生提交 / 老师设置与拉取）
+            // ============================================================
+            function getSubmitEndpoint() {
+                try {
+                    const p = new URLSearchParams(location.search);
+                    const q = p.get('submit');
+                    if (q) return q;
+                } catch (e) {}
+                try {
+                    const saved = localStorage.getItem(ENDPOINT_KEY);
+                    if (saved) return saved;
+                } catch (e) {}
+                return window.SUBMIT_ENDPOINT || '';
+            }
+
+            function getOnlineSubmittedMap() {
+                try { return JSON.parse(localStorage.getItem(SUBMITTED_KEY) || '{}') || {}; }
+                catch (e) { return {}; }
+            }
+
+            const ONLINE_BOX_DEFAULT =
+                '<p style="font-weight:700;">🌐 在线提交</p>' +
+                '<p style="margin-top:var(--sp-1);">本页面已接入在线收集，点击下方按钮即可把结果直接提交给老师，无需下载文件。</p>' +
+                '<button class="btn btn-primary" type="button" onclick="submitResultOnline()">🚀 在线提交我的结果</button>';
+
+            function renderOnlineBox() {
+                const box = $('onlineSubmitBox');
+                if (!box) return;
+                const identity = currentIdentity();
+                const done = getOnlineSubmittedMap();
+                const submitted = identity && done[identity.studentId];
+                if (getSubmitEndpoint() && identity) {
+                    if (submitted) {
+                        box.className = 'online-submit-note success';
+                        box.innerHTML = '<p style="font-weight:700;">✅ 你已在线提交过结果，无需重复提交</p>';
+                    } else {
+                        box.className = 'online-submit-note';
+                        box.innerHTML = ONLINE_BOX_DEFAULT;
+                    }
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            }
+
+            function submitResultOnline() {
+                const payload = buildResultPayload();
+                if (!payload) return;
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) {
+                    toast('本页面未启用在线提交，请用“下载结果文件”发给老师');
+                    return;
+                }
+                const done = getOnlineSubmittedMap();
+                if (done[payload.studentId]) {
+                    toast('你已在线提交过结果');
+                    return;
+                }
+                const box = $('onlineSubmitBox');
+                const body = JSON.stringify(payload);
+                const fail = function(msg) {
+                    if (box) {
+                        box.className = 'online-submit-note error';
+                        box.innerHTML = '<p style="font-weight:700;">❌ 提交失败：' + msg + '</p>' +
+                            '<p style="margin-top:var(--sp-1);font-size:var(--fs-sm);">请改用“下载我的结果文件”或“复制结果文本”发给老师。</p>';
+                    }
+                    toast('提交失败：' + msg);
+                };
+                fetch(endpoint, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                }).then(function(r) {
+                    if (r.ok) {
+                        done[payload.studentId] = new Date().toISOString();
+                        try { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(done)); } catch (e) {}
+                        if (box) {
+                            box.className = 'online-submit-note success';
+                            box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
+                        }
+                        toast('在线提交成功 ✅');
+                    } else {
+                        fail('服务器返回 ' + r.status);
+                    }
+                }).catch(function() {
+                    // fetch 跨域被拦截时，退回 sendBeacon（浏览器直接发送，不校验跨域）
+                    let ok = false;
+                    try {
+                        ok = navigator.sendBeacon(endpoint, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+                    } catch (e) { ok = false; }
+                    if (ok) {
+                        done[payload.studentId] = new Date().toISOString();
+                        try { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(done)); } catch (e) {}
+                        if (box) {
+                            box.className = 'online-submit-note success';
+                            box.innerHTML = '<p style="font-weight:700;">✅ 在线提交成功！老师已收到你的结果，谢谢配合。</p>';
+                        }
+                        toast('在线提交成功 ✅');
+                    } else {
+                        fail('网络错误，请检查网络后重试');
+                    }
+                });
+            }
+
+            function saveEndpoint() {
+                const url = $('submitEndpoint').value.trim();
+                if (!url) { toast('请先填写收集网址'); return; }
+                try { localStorage.setItem(ENDPOINT_KEY, url); } catch (e) {}
+                toast('收集网址已保存 ✅ 学生端将自动显示“在线提交”');
+                renderOnlineBox();
+            }
+
+            function testEndpoint() {
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) { toast('请先填写并保存收集网址'); return; }
+                const test = {
+                    app: 'OBE金字塔学习智能体', type: 'connection-test',
+                    studentId: 'TEST', name: '连接测试', time: new Date().toISOString()
+                };
+                fetch(endpoint, {
+                    method: 'POST', mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(test)
+                }).then(function(r) {
+                    toast(r.ok ? '连接成功 ✅ 已发送一条测试数据' : '连接异常：HTTP ' + r.status);
+                }).catch(function() {
+                    toast('连接失败：请检查网址或网络');
+                });
+            }
+
+            function pullOnlineResults() {
+                const endpoint = getSubmitEndpoint();
+                if (!endpoint) { toast('请先填写并保存收集网址'); return; }
+                const m = endpoint.match(/webhook\.site\/([0-9a-f-]{36})/i);
+                if (!m) {
+                    toast('该网址暂不支持自动拉取，请把学生提交内容粘贴到上方输入框导入');
+                    return;
+                }
+                const apiUrl = 'https://webhook.site/token/' + m[1] + '/requests?per_page=200';
+                fetch(apiUrl, { headers: { 'Accept': 'application/json' } }).then(function(r) {
+                    return r.json();
+                }).then(function(data) {
+                    const items = (data && Array.isArray(data.data)) ? data.data : [];
+                    if (!items.length) { toast('暂未收到任何在线提交'); return; }
+                    const store = loadResults();
+                    let imported = 0;
+                    items.forEach(function(it) {
+                        if (it && it.content && addResultPayload(String(it.content), store).ok) imported++;
+                    });
+                    saveResults(store);
+                    renderTeacherDashboard();
+                    toast('拉取完成：新增/更新 ' + imported + ' 份结果');
+                }).catch(function() {
+                    toast('浏览器拦截了自动拉取（跨域限制），请复制下面网址的内容后粘贴到上方输入框导入：' + apiUrl);
+                });
+            }
+
+            function refreshSubmitCard() {
+                const card = $('submitResultCard');
+                if (!card) return;
+                const comp = window._compScores;
+                if (!comp) { card.classList.add('hidden'); return; }
+                const identity = currentIdentity();
+                $('submitWho').textContent = identity ? identity.name + '（' + identity.studentId + '）' : '未填写（请先在上方填写并保存）';
+                $('submitScore').textContent = comp.total;
+                card.classList.remove('hidden');
+                renderOnlineBox();
+            }
+
+            // 提交/重置后刷新提交卡片
+            ['submitComprehensive', 'resetComprehensive'].forEach(function(fn) {
+                const orig = window[fn];
+                if (typeof orig === 'function') {
+                    window[fn] = function() {
+                        const ret = orig.apply(this, arguments);
+                        refreshSubmitCard();
+                        return ret;
+                    };
+                }
+            });
+
+            // ============================================================
+            //  教师端：数据存取
+            // ============================================================
+            function loadResults() {
+                try {
+                    const raw = localStorage.getItem(RESULTS_KEY);
+                    if (!raw) return {};
+                    const data = JSON.parse(raw);
+                    return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+                } catch (e) { return {}; }
+            }
+
+            function saveResults(data) {
+                try { localStorage.setItem(RESULTS_KEY, JSON.stringify(data)); }
+                catch (e) { toast('保存失败：浏览器存储空间不足'); }
+            }
+
+            function normalizeRecord(p) {
+                if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+                if (!(p.studentId || p.name)) return null;
+                return {
+                    app: p.app || 'OBE金字塔学习智能体',
+                    version: p.version || 1,
+                    type: 'student-result',
+                    name: p.name || '',
+                    studentId: p.studentId || '',
+                    submittedAt: p.submittedAt || '',
+                    durationSec: typeof p.durationSec === 'number' ? p.durationSec : null,
+                    compScore: typeof p.compScore === 'number' ? p.compScore : null,
+                    compTotal: typeof p.compTotal === 'number' ? p.compTotal : 10,
+                    compLevelScores: p.compLevelScores || null,
+                    dimScores: p.dimScores || null,
+                    levelScores: p.levelScores || {},
+                    answers: p.answers || { level: {}, comp: {} },
+                    detail: Array.isArray(p.detail) ? p.detail : null,
+                    levelDetail: p.levelDetail || null
+                };
+            }
+
+            // 把一份文本（可能是单条结果 / 数组 / 备份 {students:[...]}）加入仓库
+            function addResultPayload(text, store) {
+                let parsed = null;
+                try { parsed = JSON.parse(text); } catch (e) { return { ok: false, reason: 'invalid' }; }
+                // webhook.site 格式：{data:[{content:"..."}]}
+                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+                    let ok = 0;
+                    parsed.data.forEach(function(it) {
+                        if (it && typeof it.content === 'string' && addResultPayload(it.content, store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                if (Array.isArray(parsed)) {
+                    // webhook.site 请求数组：[{content:"..."}, ...]
+                    if (parsed.length && parsed[0] && typeof parsed[0].content === 'string') {
+                        let ok = 0;
+                        parsed.forEach(function(it) {
+                            if (it && typeof it.content === 'string' && addResultPayload(it.content, store).ok) ok++;
+                        });
+                        return { ok: ok > 0 };
+                    }
+                    let ok = 0;
+                    parsed.forEach(function(p) {
+                        if (addResultPayload(JSON.stringify(p), store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.students)) {
+                    let ok = 0;
+                    parsed.students.forEach(function(p) {
+                        if (addResultPayload(JSON.stringify(p), store).ok) ok++;
+                    });
+                    return { ok: ok > 0 };
+                }
+                const rec = normalizeRecord(parsed);
+                if (!rec) return { ok: false, reason: 'not-result' };
+                const key = String(rec.studentId || rec.name).trim();
+                if (!key) return { ok: false, reason: 'no-key' };
+                const old = store[key];
+                if (old && old.submittedAt && rec.submittedAt && rec.submittedAt < old.submittedAt) {
+                    return { ok: false, reason: 'older' };
+                }
+                store[key] = rec;
+                return { ok: true };
+            }
+
+            function importResultFiles(event) {
+                const files = Array.from(event.target.files || []);
+                if (!files.length) return;
+                const store = loadResults();
+                let imported = 0;
+                let skipped = 0;
+                const readNext = function(i) {
+                    if (i >= files.length) {
+                        saveResults(store);
+                        renderTeacherDashboard();
+                        toast('导入完成：成功 ' + imported + ' 份' + (skipped ? '，跳过无效/重复 ' + skipped + ' 份' : ''));
+                        event.target.value = '';
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const r = addResultPayload(String(reader.result || ''), store);
+                        if (r.ok) imported++; else skipped++;
+                        readNext(i + 1);
+                    };
+                    reader.onerror = function() { skipped++; readNext(i + 1); };
+                    reader.readAsText(files[i], 'utf-8');
+                };
+                readNext(0);
+            }
+
+            function importPastedResults() {
+                const textarea = $('pasteResults');
+                const text = (textarea.value || '').trim();
+                if (!text) { toast('请先粘贴学生发来的结果文本'); return; }
+                const store = loadResults();
+                let imported = 0;
+                let skipped = 0;
+                let whole = null;
+                try { whole = JSON.parse(text); } catch (e) { whole = null; }
+                if (whole && (Array.isArray(whole) || (whole && Array.isArray(whole.students)) || (whole && typeof whole === 'object' && (whole.studentId || whole.name)))) {
+                    const r = addResultPayload(text, store);
+                    if (r.ok) imported++; else skipped++;
+                } else {
+                    const lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+                    lines.forEach(function(line) {
+                        const r = addResultPayload(line, store);
+                        if (r.ok) imported++; else skipped++;
+                    });
+                }
+                saveResults(store);
+                renderTeacherDashboard();
+                textarea.value = '';
+                toast('导入完成：成功 ' + imported + ' 份' + (skipped ? '，跳过无效/重复 ' + skipped + ' 份' : ''));
+            }
+
+            function clearAllResults() {
+                if (!confirm('确定清空全部学生结果数据吗？此操作不可恢复。')) return;
+                try { localStorage.removeItem(RESULTS_KEY); } catch (e) {}
+                renderTeacherDashboard();
+                toast('已清空全部数据');
+            }
+
+            function exportAllJson() {
+                const store = loadResults();
+                const records = Object.values(store);
+                if (!records.length) { toast('暂无数据可备份'); return; }
+                downloadFile('OBE全部学生结果备份_' + new Date().toISOString().slice(0, 10) + '.json',
+                    JSON.stringify({ app: 'OBE金字塔学习智能体', exportedAt: new Date().toISOString(), students: records }, null, 2),
+                    'application/json;charset=utf-8');
+            }
+
+            // ============================================================
+            //  教师端：统计与图表
+            // ============================================================
+            function pctOf(c, t) {
+                return t > 0 ? Math.round(c / t * 100) : 0;
+            }
+
+            function barRow(label, widthPct, valueText, cls) {
+                const safe = escapeHtml(label);
+                return '<div class="t-bar-row"><div class="t-bar-label" title="' + safe + '">' + safe + '</div>' +
+                    '<div class="t-bar-track"><div class="t-bar-fill ' + (cls || '') + '" style="width:' + widthPct + '%"></div></div>' +
+                    '<div class="t-bar-val">' + valueText + '</div></div>';
+            }
+
+            function barPctClass(pct) {
+                return pct < 60 ? 'low' : (pct < 80 ? 'mid' : '');
+            }
+
+            function renderStats(records) {
+                const scores = records.map(function(r) { return r.compScore; }).filter(function(v) { return v !== null; });
+                const durations = records.map(function(r) { return r.durationSec; }).filter(function(v) { return v !== null && v > 0; });
+                const avg = scores.length ? Math.round(scores.reduce(function(a, b) { return a + b; }, 0) / scores.length * 10) / 10 : null;
+                const max = scores.length ? Math.max.apply(null, scores) : null;
+                const min = scores.length ? Math.min.apply(null, scores) : null;
+                const avgDur = durations.length ? Math.round(durations.reduce(function(a, b) { return a + b; }, 0) / durations.length / 60 * 10) / 10 : null;
+                const cards = [
+                    { num: records.length, label: '已收集学生' },
+                    { num: scores.length, label: '已交综合测评' },
+                    { num: avg === null ? '—' : avg + ' / 10', label: '班级平均分' },
+                    { num: max === null ? '—' : max + ' / 10', label: '最高分' },
+                    { num: min === null ? '—' : min + ' / 10', label: '最低分' },
+                    { num: avgDur === null ? '—' : avgDur + ' 分钟', label: '平均用时' }
+                ];
+                $('tStats').innerHTML = cards.map(function(c) {
+                    return '<div class="t-stat-card"><div class="num">' + c.num + '</div><div class="label">' + c.label + '</div></div>';
+                }).join('');
+            }
+
+            function renderScoreDist(records) {
+                const scores = records.map(function(r) { return r.compScore; }).filter(function(v) { return v !== null; });
+                if (!scores.length) { $('scoreDist').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无综合测评数据</p>'; return; }
+                const buckets = [
+                    { name: '90-100 分', min: 9, max: 10 },
+                    { name: '80-89 分', min: 8, max: 8.99 },
+                    { name: '70-79 分', min: 7, max: 7.99 },
+                    { name: '60-69 分', min: 6, max: 6.99 },
+                    { name: '60 分以下', min: 0, max: 5.99 }
+                ];
+                let html = '';
+                buckets.forEach(function(b) {
+                    const count = scores.filter(function(s) { return s >= b.min && s <= b.max; }).length;
+                    html += barRow(b.name, Math.round(count / scores.length * 100), count + ' 人', count ? '' : '');
+                });
+                $('scoreDist').innerHTML = html;
+            }
+
+            function studentLevelPcts(r) {
+                const out = {};
+                const cl = r.compLevelScores;
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    if (cl && cl[lv] && cl[lv].total > 0) {
+                        out[lv] = pctOf(cl[lv].correct, cl[lv].total);
+                    } else if (r.levelScores && typeof r.levelScores[lv] === 'number') {
+                        out[lv] = Math.round(r.levelScores[lv] * 100);
+                    }
+                }
+                return out;
+            }
+
+            function renderLevelAvg(records) {
+                let html = '';
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    const vals = records.map(studentLevelPcts).map(function(p) { return p[lv]; }).filter(function(v) { return v !== undefined; });
+                    if (!vals.length) { html += barRow(LEVEL_NAMES[lv], 0, '—'); continue; }
+                    const avg = Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+                    html += barRow(LEVEL_NAMES[lv] + '（' + vals.length + '人）', avg, avg + '%', barPctClass(avg));
+                }
+                $('levelAvg').innerHTML = html;
+            }
+
+            function renderCompAcc(records) {
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const agg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        agg[q.id].t++;
+                        if (q.correct) agg[q.id].c++;
+                    });
+                });
+                const ids = Object.keys(agg).sort(function(a, b) {
+                    const ia = orderIds.indexOf(a);
+                    const ib = orderIds.indexOf(b);
+                    if (ia === -1 && ib === -1) return a.localeCompare(b);
+                    if (ia === -1) return 1;
+                    if (ib === -1) return -1;
+                    return ia - ib;
+                });
+                if (!ids.length) { $('compAcc').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无综合测评数据</p>'; return; }
+                let html = '';
+                ids.forEach(function(id) {
+                    const d = agg[id];
+                    const pct = pctOf(d.c, d.t);
+                    html += barRow('Q' + (orderIds.indexOf(id) + 1) + ' · ' + d.text, pct, pct + '%', barPctClass(pct));
+                });
+                $('compAcc').innerHTML = html;
+            }
+
+            function renderLevelAcc(records) {
+                const agg = {};
+                records.forEach(function(r) {
+                    const ld = r.levelDetail || {};
+                    for (const lv of [5, 4, 3, 2, 1]) {
+                        (ld[lv] || []).forEach(function(q) {
+                            if (!q || typeof q.correct !== 'boolean') return;
+                            agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: lv };
+                            agg[q.id].t++;
+                            if (q.correct) agg[q.id].c++;
+                        });
+                    }
+                });
+                const keys = Object.keys(agg).sort(function(a, b) {
+                    const la = parseInt(a.slice(1, 2), 10);
+                    const lb = parseInt(b.slice(1, 2), 10);
+                    if (la !== lb) return lb - la;
+                    return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10);
+                });
+                if (!keys.length) { $('levelAcc').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无分层测评数据</p>'; return; }
+                let html = '';
+                keys.forEach(function(id) {
+                    const d = agg[id];
+                    const pct = pctOf(d.c, d.t);
+                    html += barRow('L' + d.level + ' · Q' + id.slice(4) + ' · ' + d.text, pct, pct + '%', barPctClass(pct));
+                });
+                $('levelAcc').innerHTML = html;
+            }
+
+            function renderDimAvg(records) {
+                const dimKeys = ['concept', 'relation', 'practice', 'analysis'];
+                let html = '';
+                dimKeys.forEach(function(dk) {
+                    const vals = [];
+                    records.forEach(function(r) {
+                        const ds = r.dimScores;
+                        if (ds && ds[dk] && ds[dk].total > 0) vals.push(pctOf(ds[dk].correct, ds[dk].total));
+                    });
+                    if (!vals.length) { html += barRow(DIM_NAMES[dk], 0, '—'); return; }
+                    const avg = Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+                    html += barRow(DIM_NAMES[dk] + '（' + vals.length + '人）', avg, avg + '%', barPctClass(avg));
+                });
+                $('dimAvg').innerHTML = html;
+            }
+
+            function renderWeak(records) {
+                const agg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        agg[q.id] = agg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        agg[q.id].t++;
+                        if (q.correct) agg[q.id].c++;
+                    });
+                });
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const list = Object.keys(agg).map(function(id) {
+                    const d = agg[id];
+                    return { id: id, pct: pctOf(d.c, d.t), c: d.c, t: d.t, text: d.text, order: orderIds.indexOf(id) };
+                }).filter(function(x) { return x.t > 0; }).sort(function(a, b) { return a.pct - b.pct || a.order - b.order; }).slice(0, 5);
+                if (!list.length) { $('weakQuestions').innerHTML = '<p style="color:var(--color-ink-muted);font-size:var(--fs-sm);">暂无数据</p>'; return; }
+                $('weakQuestions').innerHTML = list.map(function(x) {
+                    return barRow('答对 ' + x.c + '/' + x.t + ' · ' + x.text, x.pct, x.pct + '%', 'low');
+                }).join('');
+            }
+
+            function renderClassHeat(records) {
+                const dimKeys = ['concept', 'relation', 'practice', 'analysis'];
+                const cell = {};
+                const lvTotal = { 5: { c: 0, t: 0 }, 4: { c: 0, t: 0 }, 3: { c: 0, t: 0 }, 2: { c: 0, t: 0 }, 1: { c: 0, t: 0 } };
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean' || q.level === undefined || !q.dim) return;
+                        const key = q.level + '-' + q.dim;
+                        cell[key] = cell[key] || { c: 0, t: 0 };
+                        cell[key].t++;
+                        if (q.correct) cell[key].c++;
+                        lvTotal[q.level].t++;
+                        if (q.correct) lvTotal[q.level].c++;
+                    });
+                });
+                let html = '<thead><tr><th>层级 / 维度</th>';
+                dimKeys.forEach(function(dk) { html += '<th>' + DIM_NAMES[dk] + '</th>'; });
+                html += '<th>层级总评</th></tr></thead><tbody>';
+                for (const lv of [5, 4, 3, 2, 1]) {
+                    html += '<tr><th>' + LEVEL_NAMES[lv] + '</th>';
+                    dimKeys.forEach(function(dk) {
+                        const d = cell[lv + '-' + dk];
+                        const pct = d ? pctOf(d.c, d.t) : null;
+                        html += '<td style="' + (pct === null ? '' : 'background:rgba(14,165,233,' + (0.08 + pct / 100 * 0.6).toFixed(2) + ');font-weight:700;') + '">' + (pct === null ? '—' : pct + '%') + '</td>';
+                    });
+                    const lt = lvTotal[lv];
+                    const lpct = lt.t > 0 ? pctOf(lt.c, lt.t) : null;
+                    html += '<td style="' + (lpct === null ? '' : 'background:rgba(16,185,129,' + (0.08 + lpct / 100 * 0.6).toFixed(2) + ');font-weight:700;') + '">' + (lpct === null ? '—' : lpct + '%') + '</td>';
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+                $('classHeatTable').innerHTML = html;
+            }
+
+            function fmtTime(iso) {
+                if (!iso) return '—';
+                try {
+                    const d = new Date(iso);
+                    if (isNaN(d.getTime())) return '—';
+                    const p = function(n) { return (n < 10 ? '0' : '') + n; };
+                    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+                } catch (e) { return '—'; }
+            }
+
+            function renderStudentTable(records) {
+                const sorted = records.slice().sort(function(a, b) {
+                    const sa = a.compScore === null ? -1 : a.compScore;
+                    const sb = b.compScore === null ? -1 : b.compScore;
+                    return sb - sa || String(a.studentId).localeCompare(String(b.studentId));
+                });
+                let html = '<thead><tr><th>学号</th><th>姓名</th><th>提交时间</th><th>用时(分)</th><th>综合得分</th>';
+                for (const lv of [5, 4, 3, 2, 1]) html += '<th>' + LEVEL_NAMES[lv].replace('L' + lv + ' ', '') + '</th>';
+                html += '</tr></thead><tbody>';
+                sorted.forEach(function(r) {
+                    const levels = studentLevelPcts(r);
+                    const badge = function(v) {
+                        if (v === undefined) return '—';
+                        return '<span class="' + (v >= 80 ? 'badge-good' : v >= 60 ? 'badge-warn' : 'badge-bad') + '">' + v + '%</span>';
+                    };
+                    const dur = r.durationSec ? Math.round(r.durationSec / 60 * 10) / 10 : '—';
+                    html += '<tr><td>' + escapeHtml(r.studentId) + '</td><td>' + escapeHtml(r.name) + '</td>' +
+                        '<td>' + fmtTime(r.submittedAt) + '</td><td>' + dur + '</td>' +
+                        '<td>' + (r.compScore === null ? '—' : '<strong>' + r.compScore + '</strong> / ' + r.compTotal) + '</td>';
+                    for (const lv of [5, 4, 3, 2, 1]) html += '<td>' + badge(levels[lv]) + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+                $('studentTable').innerHTML = html;
+            }
+
+            function renderTeacherDashboard() {
+                const store = loadResults();
+                const records = Object.values(store);
+                const ep = $('submitEndpoint');
+                if (ep && !ep.value.trim()) ep.value = getSubmitEndpoint() || '';
+                const hasData = records.length > 0;
+                $('tEmpty').classList.toggle('hidden', hasData);
+                document.querySelectorAll('#teacherPanel .teacher-card').forEach(function(card) {
+                    card.classList.toggle('hidden', !hasData);
+                });
+                if (!hasData) return;
+                renderStats(records);
+                renderScoreDist(records);
+                renderLevelAvg(records);
+                renderCompAcc(records);
+                renderLevelAcc(records);
+                renderDimAvg(records);
+                renderWeak(records);
+                renderClassHeat(records);
+                renderStudentTable(records);
+            }
+
+            // ============================================================
+            //  教师端：CSV 导出
+            // ============================================================
+            function csvCell(v) {
+                const s = String(v == null ? '' : v);
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+
+            function exportStudentsCsv() {
+                const records = Object.values(loadResults());
+                if (!records.length) { toast('暂无数据可导出'); return; }
+                let rows = [['学号', '姓名', '提交时间', '用时(秒)', '综合得分', '综合总分', 'L5操作范式%', 'L4关键目的%', 'L3关键前提%', 'L2操作原则%', 'L1实施要点%', '概念理解%', '关系辨析%', '实践应用%', '综合分析%']];
+                records.forEach(function(r) {
+                    const lv = studentLevelPcts(r);
+                    const dims = { concept: '—', relation: '—', practice: '—', analysis: '—' };
+                    const ds = r.dimScores;
+                    if (ds) Object.keys(dims).forEach(function(dk) {
+                        if (ds[dk] && ds[dk].total > 0) dims[dk] = pctOf(ds[dk].correct, ds[dk].total);
+                    });
+                    rows.push([
+                        r.studentId, r.name, r.submittedAt, r.durationSec === null ? '' : r.durationSec,
+                        r.compScore === null ? '' : r.compScore, r.compTotal,
+                        lv[5] === undefined ? '' : lv[5], lv[4] === undefined ? '' : lv[4],
+                        lv[3] === undefined ? '' : lv[3], lv[2] === undefined ? '' : lv[2],
+                        lv[1] === undefined ? '' : lv[1],
+                        dims.concept, dims.relation, dims.practice, dims.analysis
+                    ]);
+                });
+                const csv = '\uFEFF' + rows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+                downloadFile('OBE全班学生明细_' + new Date().toISOString().slice(0, 10) + '.csv', csv, 'text/csv;charset=utf-8');
+                toast('学生明细 CSV 已导出 ✅ 可直接用 Excel 打开');
+            }
+
+            function exportQuestionsCsv() {
+                const records = Object.values(loadResults());
+                if (!records.length) { toast('暂无数据可导出'); return; }
+                const rows = [['来源', '题号', '题目', '层级', '维度', '答对人数', '答题人数', '正确率%']];
+                const orderIds = (typeof compQuestions !== 'undefined' ? compQuestions : []).map(function(q) { return q.id; });
+                const pushAgg = function(agg, source) {
+                    Object.keys(agg).sort(function(a, b) {
+                        const ia = orderIds.indexOf(a);
+                        const ib = orderIds.indexOf(b);
+                        if (source === '综合' && ia !== -1 && ib !== -1) return ia - ib;
+                        if (source === '综合' && ia === -1) return 1;
+                        if (source === '综合' && ib === -1) return -1;
+                        const la = parseInt(a.slice(1, 2), 10);
+                        const lb = parseInt(b.slice(1, 2), 10);
+                        if (la !== lb) return lb - la;
+                        return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10);
+                    }).forEach(function(id) {
+                        const d = agg[id];
+                        rows.push([source, id, d.text, 'L' + d.level, DIM_NAMES[d.dim] || '', d.c, d.t, pctOf(d.c, d.t)]);
+                    });
+                };
+                const compAgg = {};
+                const levelAgg = {};
+                records.forEach(function(r) {
+                    (r.detail || []).forEach(function(q) {
+                        if (!q || typeof q.correct !== 'boolean') return;
+                        compAgg[q.id] = compAgg[q.id] || { c: 0, t: 0, text: q.question || '', level: q.level, dim: q.dim };
+                        compAgg[q.id].t++;
+                        if (q.correct) compAgg[q.id].c++;
+                    });
+                    const ld = r.levelDetail || {};
+                    for (const lv of [5, 4, 3, 2, 1]) {
+                        (ld[lv] || []).forEach(function(q) {
+                            if (!q || typeof q.correct !== 'boolean') return;
+                            levelAgg[q.id] = levelAgg[q.id] || { c: 0, t: 0, text: q.question || '', level: lv, dim: '' };
+                            levelAgg[q.id].t++;
+                            if (q.correct) levelAgg[q.id].c++;
+                        });
+                    }
+                });
+                pushAgg(compAgg, '综合测评');
+                pushAgg(levelAgg, '分层测评');
+                const csv = '\uFEFF' + rows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+                downloadFile('OBE每题正确率_' + new Date().toISOString().slice(0, 10) + '.csv', csv, 'text/csv;charset=utf-8');
+                toast('每题正确率 CSV 已导出 ✅ 可直接用 Excel 打开');
+            }
+
+            // ============================================================
+            //  角色切换与入口
+            // ============================================================
+            function unlockTeacher() {
+                const pwd = $('teacherPwd').value;
+                if (pwd === window.TEACHER_PASSWORD) {
+                    try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+                    $('teacherGate').classList.add('hidden');
+                    $('teacherPanel').classList.remove('hidden');
+                    renderTeacherDashboard();
+                    toast('已进入教师端 ✅');
+                } else {
+                    toast('密码错误，请重试');
+                }
+            }
+
+            function setRole(role) {
+                const isTeacher = role === 'teacher';
+                $('roleStudentBtn').classList.toggle('active', !isTeacher);
+                $('roleTeacherBtn').classList.toggle('active', isTeacher);
+                $('teacherSection').classList.toggle('hidden', !isTeacher);
+                const main = document.querySelector('.page-wrap main');
+                if (main) main.classList.toggle('hidden', isTeacher);
+                if (isTeacher) {
+                    let unlocked = false;
+                    try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) {}
+                    $('teacherGate').classList.toggle('hidden', unlocked);
+                    $('teacherPanel').classList.toggle('hidden', !unlocked);
+                    if (unlocked) renderTeacherDashboard();
+                } else {
+                    refreshSubmitCard();
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // ---- 教师页初始化 ----
+            const ep0 = $('submitEndpoint');
+            if (ep0 && !ep0.value.trim()) ep0.value = getSubmitEndpoint() || '';
+            renderTeacherDashboard();
+        })();
+    
+    </script>
+</body>
+</html>
