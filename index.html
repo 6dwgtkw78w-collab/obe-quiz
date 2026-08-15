@@ -882,6 +882,14 @@
             background: #cffafe;
             color: #155e75;
         }
+        .kg-fallback {
+            padding: var(--sp-4);
+            text-align: center;
+            color: var(--color-ink-muted);
+            font-size: var(--fs-sm);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-md);
+        }
         .kg-level-badge.l1 {
             background: #e0f2fe;
             color: #075985;
@@ -1674,8 +1682,35 @@
         </div>
     </div>
 
-    <!-- ECharts -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js">
+    <!-- ECharts（国内多 CDN 备选，异步加载，加载失败不影响做题与统计） -->
+    <script>
+        (function() {
+            var urls = [
+                'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
+                'https://cdn.staticfile.org/echarts/5.4.3/echarts.min.js',
+                'https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js'
+            ];
+            var i = 0;
+            function loadNext() {
+                if (i >= urls.length) {
+                    var box = document.getElementById('kg-container');
+                    if (box && !box.querySelector('.kg-fallback')) {
+                        var tip = document.createElement('div');
+                        tip.className = 'kg-fallback';
+                        tip.textContent = '⚠️ 知识图谱需要联网加载图表库，当前网络无法加载；不影响做题与结果统计。';
+                        box.appendChild(tip);
+                    }
+                    return;
+                }
+                var scr = document.createElement('script');
+                scr.src = urls[i++];
+                scr.async = true;
+                scr.onload = function() { window.__echartsLoaded = true; };
+                scr.onerror = loadNext;
+                document.head.appendChild(scr);
+            }
+            loadNext();
+        })();
     </script>
 
     <script>
@@ -1725,6 +1760,7 @@
         // ============================================================
         //  2. ECharts 知识图谱
         // ============================================================
+        function initKnowledgeGraph() {
         const kgChart = (typeof echarts !== 'undefined') ? echarts.init(document.getElementById('kg-container')) : null;
         const layers = [
             { level: 5, label: 'L5 操作范式', y: 30, size: 56, color: '#fef9c3' },
@@ -1807,6 +1843,21 @@
             }
         });
         window.addEventListener('resize', () => kgChart && kgChart.resize());
+
+        }
+
+        if (typeof echarts !== 'undefined') {
+            initKnowledgeGraph();
+        } else {
+            const kgTimer = setInterval(function() {
+                if (typeof echarts !== 'undefined') {
+                    clearInterval(kgTimer);
+                    initKnowledgeGraph();
+                }
+            }, 300);
+            setTimeout(function() { clearInterval(kgTimer); }, 15000);
+        }
+
 
         // ============================================================
         //  3. 模态框
