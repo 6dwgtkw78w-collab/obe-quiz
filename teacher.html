@@ -1254,17 +1254,6 @@
                 <p class="section-desc">导入学生提交的结果，自动生成全班分数分布、各层掌握度、每题正确率等统计图表，并可导出 Excel 数据。</p>
             </div>
 
-            <div class="teacher-card" id="teacherGate">
-                <h3>🔒 教师端入口</h3>
-                <p style="color:var(--color-ink-muted);margin-top:var(--sp-2);font-size:var(--fs-sm);">
-                    请输入教师密码（默认密码：<strong>hblg2026</strong>，可在页面代码开头的 <code>TEACHER_PASSWORD</code> 处修改）。
-                </p>
-                <div class="password-gate">
-                    <input type="password" id="teacherPwd" placeholder="请输入教师密码" onkeydown="if(event.key==='Enter')unlockTeacher()">
-                    <button class="btn btn-primary" type="button" onclick="unlockTeacher()">进入教师端</button>
-                </div>
-            </div>
-
             <div id="teacherPanel" class="hidden">
                 <div class="t-help">
                     <strong>📖 使用说明（三步收集全班结果）</strong>
@@ -1369,7 +1358,7 @@
         </section>
 
         <footer class="footer">
-            <p>OBE 金字塔知识智能体 · 教师端统计 · 数据保存在你的浏览器中</p>
+            <p>OBE 金字塔知识智能体 · 教师端统计 · 数据保存在你的浏览器中 · 此页面请勿发给学生</p>
         </footer>
     </div>
 
@@ -2250,7 +2239,7 @@
             //  角色切换与入口
             // ============================================================
             function unlockTeacher() {
-                const pwd = $('teacherPwd').value;
+                const pwd = $('teacherPwd').value.trim();
                 if (pwd === window.TEACHER_PASSWORD) {
                     try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
                     $('teacherGate').classList.add('hidden');
@@ -2281,7 +2270,10 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // ---- 教师页初始化 ----
+            // ---- 教师页初始化（免密码，链接仅老师使用）----
+            try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+            const pan = $('teacherPanel');
+            if (pan) pan.classList.remove('hidden');
             const ep0 = $('submitEndpoint');
             if (ep0 && !ep0.value.trim()) ep0.value = getSubmitEndpoint() || '';
             renderTeacherDashboard();
