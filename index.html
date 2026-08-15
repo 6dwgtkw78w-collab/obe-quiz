@@ -3334,7 +3334,7 @@
             //  角色切换与入口
             // ============================================================
             function unlockTeacher() {
-                const pwd = $('teacherPwd').value;
+                const pwd = $('teacherPwd').value.trim();
                 if (pwd === window.TEACHER_PASSWORD) {
                     try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
                     $('teacherGate').classList.add('hidden');
